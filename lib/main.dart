@@ -1,23 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:todoapp/features/tasks/data/in_memory_task_repository_impl.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:todoapp/features/tasks/data/hive_task_repository_imp.dart';
+
 import 'package:todoapp/features/tasks/domain/task_repository.dart';
 import 'package:todoapp/features/tasks/presentation/cubit/task_cubit.dart';
 import 'package:todoapp/features/tasks/presentation/pages/tasks_page.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  await Hive.initFlutter();
+  const String tasksBoxName = "tasks_box";
+  final tasksBox = await Hive.openBox(tasksBoxName);
+
+  WidgetsFlutterBinding.ensureInitialized();
+  final TaskRepository taskRepository = HiveTaskRepositoryImp(
+    taskBox: tasksBox,
+  );
+  runApp(MyApp(taskRepository: taskRepository));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final TaskRepository taskRepository;
+
+  const MyApp({super.key, required this.taskRepository});
 
   @override
   Widget build(BuildContext context) {
     // ننشئ المستودع ونمرره إلى الـ Cubit
-    final TaskRepository taskRepository = InMemoryTaskRepositoryImpl();
 
     return RepositoryProvider.value(
       value: taskRepository,

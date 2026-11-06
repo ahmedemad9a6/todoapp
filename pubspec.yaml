@@ -39,7 +39,9 @@ dependencies:
   uuid: ^4.6.0
   flutter_localizations:
     sdk: flutter
-  hive: ^2.2.3
+  
+  hive_ce: ^2.22.0
+  hive_ce_flutter: ^2.3.4
 
 dev_dependencies:
   flutter_test:
