@@ -1,72 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:todoapp/features/tasks/data/hive_task_repository_imp.dart';
+import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 
+import 'package:todoapp/core/theme/app_theme.dart';
+import 'package:todoapp/core/theme/theme_cubit.dart';
+import 'package:todoapp/features/tasks/data/hive_task_repository_imp.dart';
 import 'package:todoapp/features/tasks/domain/task_repository.dart';
 import 'package:todoapp/features/tasks/presentation/cubit/task_cubit.dart';
 import 'package:todoapp/features/tasks/presentation/pages/tasks_page.dart';
 
 void main() async {
+  // 1. ضمان تهيئة خدمات فلاتر الأساسية
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. تهيئة Hive وفتح الصندوق
   await Hive.initFlutter();
   const String tasksBoxName = "tasks_box";
   final tasksBox = await Hive.openBox(tasksBoxName);
 
-  WidgetsFlutterBinding.ensureInitialized();
+  // 3. إنشاء المستودع بحقن الصندوق
   final TaskRepository taskRepository = HiveTaskRepositoryImp(
     taskBox: tasksBox,
   );
-  runApp(MyApp(taskRepository: taskRepository));
+
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => ThemeCubit()),
+        BlocProvider(
+          create: (_) => TaskCubit(repository: taskRepository)..loadTasks(),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
-  final TaskRepository taskRepository;
-
-  const MyApp({super.key, required this.taskRepository});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // ننشئ المستودع ونمرره إلى الـ Cubit
+    return MaterialApp(
+      title: 'تطبيق المهام',
+      debugShowCheckedModeBanner: false,
 
-    return RepositoryProvider.value(
-      value: taskRepository,
-      child: BlocProvider(
-        create: (context) => TaskCubit(repository: taskRepository)..loadTasks(),
-        child: MaterialApp(
-          title: 'تطبيق المهام',
-          debugShowCheckedModeBanner: false,
+      // إعداد اتجاه اللغة العربية من اليمين إلى اليسار (RTL)
+      locale: const Locale('ar', 'SA'),
+      supportedLocales: const [Locale('ar', 'SA'), Locale('en', 'US')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
 
-          // إعداد اتجاه اللغة العربية من اليمين إلى اليسار (RTL)
-          locale: const Locale('ar', 'SA'),
-          supportedLocales: const [Locale('ar', 'SA'), Locale('en', 'US')],
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
+      // تطبيق نظام الثيم ومتابعة تغيرات ThemeCubit للوضع الليلي والنهاري
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: context.watch<ThemeCubit>().state,
 
-          // ثيم Material 3
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF3F51B5), // لون نيلي أنيق
-              brightness: Brightness.light,
-            ),
-          ),
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF3F51B5),
-              brightness: Brightness.dark,
-            ),
-          ),
-          themeMode: ThemeMode.system,
-
-          home: const TasksPage(),
-        ),
-      ),
+      home: const TasksPage(),
     );
   }
 }

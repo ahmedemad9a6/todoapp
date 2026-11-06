@@ -1,40 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:todoapp/core/theme/theme_cubit.dart';
 import 'package:todoapp/features/tasks/domain/task_entity.dart';
 import 'package:todoapp/features/tasks/presentation/cubit/task_cubit.dart';
 import 'package:todoapp/features/tasks/presentation/cubit/task_state.dart';
-import 'package:todoapp/features/tasks/presentation/widgets/task_dialog.dart';
-import 'package:todoapp/features/tasks/presentation/widgets/task_entity.dart';
+import 'package:todoapp/features/tasks/presentation/widgets/empty_tasks_view.dart';
+import 'package:todoapp/features/tasks/presentation/widgets/modern_task_item.dart';
+import 'package:todoapp/features/tasks/presentation/widgets/task_bottom_sheet.dart';
 
 class TasksPage extends StatelessWidget {
   const TasksPage({super.key});
 
-  void _showAddDialog(BuildContext context) {
-    showDialog(
+  void _openBottomSheet(BuildContext context, {TaskEntity? taskToEdit}) {
+    showModalBottomSheet(
       context: context,
-      builder: (dialogContext) => TaskDialog(
-        onSave: (title, description) {
-          context.read<TaskCubit>().addTask(
-            title: title,
-            description: description,
-          );
-        },
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-    );
-  }
-
-  void _showEditDialog(BuildContext context, TaskEntity task) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => TaskDialog(
-        taskToEdit: task,
-        onSave: (title, description) {
-          context.read<TaskCubit>().editTask(
-            task: task,
-            newTitle: title,
-            newDescription: description,
-          );
+      builder: (ctx) => TaskBottomSheet(
+        taskToEdit: taskToEdit,
+        onSave: (title, desc) {
+          if (taskToEdit == null) {
+            context.read<TaskCubit>().addTask(title: title, description: desc);
+          } else {
+            context.read<TaskCubit>().editTask(
+                  task: taskToEdit,
+                  newTitle: title,
+                  newDescription: desc,
+                );
+          }
         },
       ),
     );
@@ -50,6 +46,7 @@ class TasksPage extends StatelessWidget {
       SnackBar(
         content: Text('تم حذف "${task.title}"'),
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         action: SnackBarAction(
           label: 'تراجع',
           textColor: Theme.of(context).colorScheme.inversePrimary,
@@ -63,8 +60,25 @@ class TasksPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeCubit = context.watch<ThemeCubit>();
+    final isDark = themeCubit.isDark(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('مهامي اليومية'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('مهامي اليومية'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: isDark ? 'الوضع النهاري' : 'الوضع الليلي',
+            icon: Icon(
+              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+            ),
+            onPressed: () {
+              context.read<ThemeCubit>().toggleTheme();
+            },
+          ),
+        ],
+      ),
       body: BlocConsumer<TaskCubit, TaskState>(
         listener: (context, state) {
           if (state is TaskError) {
@@ -85,41 +99,21 @@ class TasksPage extends StatelessWidget {
             final tasks = state.tasks;
 
             if (tasks.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.checklist_rounded,
-                      size: 80,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.outline.withOpacity(0.5),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'لا توجد مهام حالياً',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text('اضغط على زر (+) في الأسفل لإضافة مهمتك الأولى'),
-                  ],
-                ),
+              return EmptyTasksView(
+                onAddTask: () => _openBottomSheet(context),
               );
             }
 
             return ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               itemCount: tasks.length,
               itemBuilder: (context, index) {
                 final task = tasks[index];
-                return TaskItemTile(
+                return ModernTaskItem(
                   task: task,
                   onToggle: () =>
                       context.read<TaskCubit>().toggleTaskStatus(task),
-                  onEdit: () => _showEditDialog(context, task),
+                  onEdit: () => _openBottomSheet(context, taskToEdit: task),
                   onDelete: () => _handleDelete(context, task),
                 );
               },
@@ -130,8 +124,8 @@ class TasksPage extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddDialog(context),
-        icon: const Icon(Icons.add),
+        onPressed: () => _openBottomSheet(context),
+        icon: const Icon(Icons.add_rounded),
         label: const Text('مهمة جديدة'),
       ),
     );
