@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:todoapp/features/tasks/domain/task_entity.dart';
+import 'package:todoapp/features/tasks/domain/task_enums.dart';
 
 class ModernTaskItem extends StatelessWidget {
   final TaskEntity task;
@@ -15,10 +17,22 @@ class ModernTaskItem extends StatelessWidget {
     required this.onDelete,
   });
 
+  Color _getPriorityColor(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.high:
+        return Colors.red;
+      case TaskPriority.medium:
+        return Colors.orange;
+      case TaskPriority.low:
+        return Colors.green;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDone = task.isCompleted;
+    final priorityColor = _getPriorityColor(task.priority);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -32,8 +46,10 @@ class ModernTaskItem extends StatelessWidget {
           border: Border.all(
             color: isDone
                 ? theme.colorScheme.outlineVariant.withOpacity(0.3)
-                : theme.colorScheme.primary.withOpacity(0.15),
-            width: 1.2,
+                : (task.isOverdue
+                      ? Colors.red.withOpacity(0.4)
+                      : theme.colorScheme.primary.withOpacity(0.15)),
+            width: task.isOverdue && !isDone ? 1.5 : 1.2,
           ),
           boxShadow: isDone
               ? []
@@ -88,22 +104,111 @@ class ModernTaskItem extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(height: 8),
-              Row(
+              const SizedBox(height: 10),
+
+              // صف الشارات (التصنيف، الأولوية، التاريخ)
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Icon(
-                    Icons.access_time_rounded,
-                    size: 13,
-                    color: theme.colorScheme.outline,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatDate(task.createdAt),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: theme.colorScheme.outline,
+                  // 1. شارة التصنيف
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${task.category.icon} ${task.category.label}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
+
+                  // 2. شارة الأولوية
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: priorityColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(radius: 3, backgroundColor: priorityColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          task.priority.label,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: priorityColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 3. شارة موعد الاستحقاق (إن وُجد)
+                  if (task.dueDate != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: task.isOverdue
+                            ? Colors.red.withOpacity(0.12)
+                            : (task.isDueToday
+                                  ? theme.colorScheme.primary.withOpacity(0.12)
+                                  : theme.colorScheme.surfaceVariant
+                                        .withOpacity(0.4)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            task.isOverdue
+                                ? Icons.warning_amber_rounded
+                                : Icons.event_rounded,
+                            size: 13,
+                            color: task.isOverdue
+                                ? Colors.red
+                                : (task.isDueToday
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outline),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            task.isOverdue
+                                ? 'متأخرة (${_formatDate(task.dueDate!)})'
+                                : (task.isDueToday
+                                      ? 'مستحقة اليوم'
+                                      : _formatDate(task.dueDate!)),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: task.isOverdue
+                                  ? Colors.red
+                                  : (task.isDueToday
+                                        ? theme.colorScheme.primary
+                                        : theme.colorScheme.outline),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],

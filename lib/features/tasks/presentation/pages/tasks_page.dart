@@ -7,10 +7,10 @@ import 'package:todoapp/features/tasks/presentation/cubit/task_state.dart';
 import 'package:todoapp/features/tasks/presentation/widgets/empty_tasks_view.dart';
 import 'package:todoapp/features/tasks/presentation/widgets/modern_task_item.dart';
 import 'package:todoapp/features/tasks/presentation/widgets/task_bottom_sheet.dart';
+import 'package:todoapp/features/tasks/presentation/widgets/task_filter_bar.dart';
 
 class TasksPage extends StatelessWidget {
   const TasksPage({super.key});
-
   void _openBottomSheet(BuildContext context, {TaskEntity? taskToEdit}) {
     showModalBottomSheet(
       context: context,
@@ -21,15 +21,25 @@ class TasksPage extends StatelessWidget {
       ),
       builder: (ctx) => TaskBottomSheet(
         taskToEdit: taskToEdit,
-        onSave: (title, desc) {
+        onSave: (title, desc, dueDate, priority, category) {
+          // 👈 استقبل كل المتغيرات
           if (taskToEdit == null) {
-            context.read<TaskCubit>().addTask(title: title, description: desc);
+            context.read<TaskCubit>().addTask(
+              title: title,
+              description: desc,
+              dueDate: dueDate,
+              priority: priority,
+              category: category,
+            );
           } else {
             context.read<TaskCubit>().editTask(
-                  task: taskToEdit,
-                  newTitle: title,
-                  newDescription: desc,
-                );
+              task: taskToEdit,
+              newTitle: title,
+              newDescription: desc,
+              newDueDate: dueDate,
+              newPriority: priority,
+              newCategory: category,
+            );
           }
         },
       ),
@@ -96,27 +106,37 @@ class TasksPage extends StatelessWidget {
           }
 
           if (state is TaskLoadedSuccessfully) {
-            final tasks = state.tasks;
+            final tasks = state.filteredTasks; // 👈 استخدمنا filteredTasks
 
-            if (tasks.isEmpty) {
-              return EmptyTasksView(
-                onAddTask: () => _openBottomSheet(context),
-              );
-            }
+            return Column(
+              children: [
+                // شريط البحث والفلترة بالأعلى
+                const TaskFilterBar(),
 
-            return ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              itemCount: tasks.length,
-              itemBuilder: (context, index) {
-                final task = tasks[index];
-                return ModernTaskItem(
-                  task: task,
-                  onToggle: () =>
-                      context.read<TaskCubit>().toggleTaskStatus(task),
-                  onEdit: () => _openBottomSheet(context, taskToEdit: task),
-                  onDelete: () => _handleDelete(context, task),
-                );
-              },
+                // قائمة المهام
+                Expanded(
+                  child: tasks.isEmpty
+                      ? EmptyTasksView(
+                          onAddTask: () => _openBottomSheet(context),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          itemCount: tasks.length,
+                          itemBuilder: (context, index) {
+                            final task = tasks[index];
+                            return ModernTaskItem(
+                              task: task,
+                              onToggle: () => context
+                                  .read<TaskCubit>()
+                                  .toggleTaskStatus(task),
+                              onEdit: () =>
+                                  _openBottomSheet(context, taskToEdit: task),
+                              onDelete: () => _handleDelete(context, task),
+                            );
+                          },
+                        ),
+                ),
+              ],
             );
           }
 

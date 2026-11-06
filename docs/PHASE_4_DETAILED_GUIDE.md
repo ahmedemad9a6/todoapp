@@ -565,16 +565,297 @@ class TaskCubit extends Cubit<TaskState> {
 
 ---
 
-## 5. تطوير واجهة الإضافة (ModalBottomSheet)
+## 5. تطوير واجهة الإضافة (ModalBottomSheet) - الكود الكامل
 
 سنقوم بترقية ورقة الإضافة لدعم اختيار:
-1. **تاريخ الاستحقاق (`dueDate`):** عبر `showDatePicker`.
-2. **مستوى الأولوية:** خيارات ملونة (منخفضة 🟢 / متوسطة 🟡 / مرتفعة 🔴).
-3. **التصنيف:** أيقونات لاختيار تصنيف المهمة (عمل، دراسة، شخصي...).
+1. **تاريخ الاستحقاق (`dueDate`):** عبر `showDatePicker` مع إمكانية إلغاء التاريخ.
+2. **مستوى الأولوية (`TaskPriority`):** عبر `SegmentedButton` أنيق بألوان معبرة (🟢 منخفضة / 🟡 متوسطة / 🔴 مرتفعة).
+3. **تصنيف المهمة (`TaskCategory`):** عبر شرائح تفاعلية (`ChoiceChip`) بأيقونات واضحة (👤 شخصي / 💼 عمل / 📚 دراسة...).
 
-### التحديث في: `lib/features/tasks/presentation/widgets/task_bottom_sheet.dart`:
-* إضافة منتقي التاريخ مع زر إزالة التاريخ.
-* إضافة `SegmentedButton` أو شرائح لاختيار الأولوية والتصنيف بسهولة وجمال بصري.
+### 📄 ملف: `lib/features/tasks/presentation/widgets/task_bottom_sheet.dart`
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:todoapp/features/tasks/domain/task_entity.dart';
+import 'package:todoapp/features/tasks/domain/task_enums.dart';
+
+class TaskBottomSheet extends StatefulWidget {
+  final TaskEntity? taskToEdit;
+  final void Function(
+    String title,
+    String description,
+    DateTime? dueDate,
+    TaskPriority priority,
+    TaskCategory category,
+  ) onSave;
+
+  const TaskBottomSheet({
+    super.key,
+    this.taskToEdit,
+    required this.onSave,
+  });
+
+  @override
+  State<TaskBottomSheet> createState() => _TaskBottomSheetState();
+}
+
+class _TaskBottomSheetState extends State<TaskBottomSheet> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _descController;
+  final _formKey = GlobalKey<FormState>();
+
+  DateTime? _selectedDueDate;
+  late TaskPriority _selectedPriority;
+  late TaskCategory _selectedCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    final task = widget.taskToEdit;
+    _titleController = TextEditingController(text: task?.title ?? '');
+    _descController = TextEditingController(text: task?.description ?? '');
+    _selectedDueDate = task?.dueDate;
+    _selectedPriority = task?.priority ?? TaskPriority.medium;
+    _selectedCategory = task?.category ?? TaskCategory.personal;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDueDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDueDate ?? now,
+      firstDate: now.subtract(const Duration(days: 365)),
+      lastDate: now.add(const Duration(days: 365 * 5)),
+      locale: const Locale('ar', 'SA'),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDueDate = picked;
+      });
+    }
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() ?? false) {
+      widget.onSave(
+        _titleController.text,
+        _descController.text,
+        _selectedDueDate,
+        _selectedPriority,
+        _selectedCategory,
+      );
+      Navigator.of(context).pop();
+    }
+  }
+
+  Color _getPriorityColor(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.high:
+        return Colors.red;
+      case TaskPriority.medium:
+        return Colors.orange;
+      case TaskPriority.low:
+        return Colors.green;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isEditing = widget.taskToEdit != null;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        left: 20,
+        right: 20,
+        top: 16,
+      ),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // مقبض السحب العلوي
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+
+              Text(
+                isEditing ? 'تعديل المهمة' : 'مهمة جديدة ✨',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // حقل العنوان
+              TextFormField(
+                controller: _titleController,
+                autofocus: !isEditing,
+                decoration: const InputDecoration(
+                  hintText: 'عنوان المهمة...',
+                  prefixIcon: Icon(Icons.task_alt_rounded),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'يرجى إدخال عنوان للمهمة';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // حقل الوصف
+              TextFormField(
+                controller: _descController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  hintText: 'ملاحظات وتفاصيل إضافية (اختياري)',
+                  prefixIcon: Icon(Icons.notes_rounded),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // اختيار تاريخ الاستحقاق
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _pickDueDate,
+                      icon: const Icon(Icons.calendar_today_rounded, size: 18),
+                      label: Text(
+                        _selectedDueDate == null
+                            ? 'تحديد موعد الاستحقاق'
+                            : 'الموعد: ${_selectedDueDate!.year}/${_selectedDueDate!.month}/${_selectedDueDate!.day}',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_selectedDueDate != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: 'إلغاء التاريخ',
+                      icon: const Icon(Icons.close_rounded, color: Colors.red),
+                      onPressed: () {
+                        setState(() {
+                          _selectedDueDate = null;
+                        });
+                      },
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // اختيار مستوى الأولوية
+              Text(
+                'مستوى الأولوية:',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<TaskPriority>(
+                segments: TaskPriority.values.map((priority) {
+                  final color = _getPriorityColor(priority);
+                  return ButtonSegment<TaskPriority>(
+                    value: priority,
+                    label: Text(priority.label),
+                    icon: Icon(Icons.flag_rounded, color: color, size: 18),
+                  );
+                }).toList(),
+                selected: {_selectedPriority},
+                onSelectionChanged: (newSelection) {
+                  setState(() {
+                    _selectedPriority = newSelection.first;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // اختيار التصنيف
+              Text(
+                'التصنيف:',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: TaskCategory.values.map((cat) {
+                    final isSelected = _selectedCategory == cat;
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: ChoiceChip(
+                        avatar: Text(cat.icon),
+                        label: Text(cat.label),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() {
+                              _selectedCategory = cat;
+                            });
+                          }
+                        },
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // زر الحفظ
+              ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  isEditing ? 'حفظ التعديلات' : 'إضافة المهمة',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
 
 ---
 
@@ -651,14 +932,254 @@ class TaskFilterBar extends StatelessWidget {
 
 ---
 
-## 7. تحديث بطاقة المهمة بالشارات والألوان
+## 7. تحديث بطاقة المهمة بالشارات والألوان - الكود الكامل
 
-سنضيف إلى [`ModernTaskItem`](file:///home/ahmed/Desktop/Ahmed%20Flutter/toDoApp/todoapp/lib/features/tasks/presentation/widgets/modern_task_item.dart):
-* **شارة الأولوية:** نقطة أو شارة بلون مميز (أحمر للمرتفعة، برتقالي للمتوسطة، أخضر للمنخفضة).
-* **أيقونة التصنيف:** رمز تعبيري أو أيقونة تعبر عن (عمل 💼 / دراسة 📚).
-* **تاريخ الاستحقاق والتنبيه عند التأخر:**
-  * إذا كانت المهمة متأخرة عن موعدها تظهر باللون الأحمر التحذيري ⚠️.
-  * إذا كانت مستحقة اليوم تظهر مع شارة "اليوم".
+سنقوم بترقية بطاقة المهمة في [`ModernTaskItem`](file:///home/ahmed/Desktop/Ahmed%20Flutter/toDoApp/todoapp/lib/features/tasks/presentation/widgets/modern_task_item.dart) لتعرض:
+* **شارة الأولوية:** نقطة ملونة ونص شارة للأولوية (🔴 مرتفعة / 🟡 متوسطة / 🟢 منخفضة).
+* **شارة التصنيف:** أيقونة التصنيف واسمه (💼 عمل / 📚 دراسة...).
+* **تاريخ الاستحقاق الذكي:**
+  * إذا كانت المهمة متأخرة عن موعدها، تظهر شارة حمراء تحذيرية ⚠️ مع إشعار "متأخرة".
+  * إذا كانت المهمة مستحقة اليوم، تظهر شارة زرقاء مميزة "اليوم".
+
+### 📄 ملف: `lib/features/tasks/presentation/widgets/modern_task_item.dart`
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:todoapp/features/tasks/domain/task_entity.dart';
+import 'package:todoapp/features/tasks/domain/task_enums.dart';
+
+class ModernTaskItem extends StatelessWidget {
+  final TaskEntity task;
+  final VoidCallback onToggle;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const ModernTaskItem({
+    super.key,
+    required this.task,
+    required this.onToggle,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  Color _getPriorityColor(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.high:
+        return Colors.red;
+      case TaskPriority.medium:
+        return Colors.orange;
+      case TaskPriority.low:
+        return Colors.green;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDone = task.isCompleted;
+    final priorityColor = _getPriorityColor(task.priority);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        decoration: BoxDecoration(
+          color: isDone
+              ? theme.colorScheme.surfaceVariant.withOpacity(0.2)
+              : theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDone
+                ? theme.colorScheme.outlineVariant.withOpacity(0.3)
+                : (task.isOverdue
+                    ? Colors.red.withOpacity(0.4)
+                    : theme.colorScheme.primary.withOpacity(0.15)),
+            width: task.isOverdue && !isDone ? 1.5 : 1.2,
+          ),
+          boxShadow: isDone
+              ? []
+              : [
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withOpacity(0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: Transform.scale(
+            scale: 1.15,
+            child: Checkbox(
+              value: isDone,
+              onChanged: (_) => onToggle(),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              activeColor: theme.colorScheme.primary,
+            ),
+          ),
+          title: Text(
+            task.title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              decoration: isDone ? TextDecoration.lineThrough : null,
+              color: isDone
+                  ? theme.colorScheme.outline
+                  : theme.colorScheme.onSurface,
+            ),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (task.description.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  task.description,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDone
+                        ? theme.colorScheme.outline.withOpacity(0.7)
+                        : theme.colorScheme.onSurfaceVariant,
+                    decoration: isDone ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 10),
+
+              // صف الشارات (التصنيف، الأولوية، التاريخ)
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  // 1. شارة التصنيف
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${task.category.icon} ${task.category.label}',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+
+                  // 2. شارة الأولوية
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: priorityColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(radius: 3, backgroundColor: priorityColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          task.priority.label,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: priorityColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 3. شارة موعد الاستحقاق (إن وُجد)
+                  if (task.dueDate != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: task.isOverdue
+                            ? Colors.red.withOpacity(0.12)
+                            : (task.isDueToday
+                                ? theme.colorScheme.primary.withOpacity(0.12)
+                                : theme.colorScheme.surfaceVariant.withOpacity(0.4)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            task.isOverdue
+                                ? Icons.warning_amber_rounded
+                                : Icons.event_rounded,
+                            size: 13,
+                            color: task.isOverdue
+                                ? Colors.red
+                                : (task.isDueToday
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.outline),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            task.isOverdue
+                                ? 'متأخرة (${_formatDate(task.dueDate!)})'
+                                : (task.isDueToday
+                                    ? 'مستحقة اليوم'
+                                    : _formatDate(task.dueDate!)),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: task.isOverdue
+                                  ? Colors.red
+                                  : (task.isDueToday
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outline),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+          trailing: PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert_rounded, color: theme.colorScheme.outline),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            onSelected: (val) {
+              if (val == 'edit') onEdit();
+              if (val == 'delete') onDelete();
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, size: 20),
+                    SizedBox(width: 8),
+                    Text('تعديل'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('حذف', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}/${date.month}/${date.day}';
+  }
+}
+```
 
 ---
 
