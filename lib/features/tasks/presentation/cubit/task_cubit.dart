@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import 'package:todoapp/features/tasks/data/task_model.dart';
+import 'package:todoapp/features/tasks/domain/sub_task_entity.dart';
 import 'package:todoapp/features/tasks/domain/task_entity.dart';
 import 'package:todoapp/features/tasks/domain/task_enums.dart';
 import 'package:todoapp/features/tasks/domain/task_repository.dart';
@@ -13,7 +16,6 @@ class TaskCubit extends Cubit<TaskState> {
 
   TaskCubit({required this.repository}) : super(TaskInitial());
 
-  /// جلب المهام وتطبيق الفلاتر الحالية
   Future<void> loadTasks() async {
     try {
       emit(TaskLoading());
@@ -30,7 +32,6 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  /// البحث الفوري بالنص
   void search(String query) {
     if (state is TaskLoadedSuccessfully) {
       final current = state as TaskLoadedSuccessfully;
@@ -44,7 +45,6 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  /// فلترة بحالة المهمة (الكل / قيد الإنجاز / مكتملة / اليوم)
   void setStatusFilter(TaskFilterStatus status) {
     if (state is TaskLoadedSuccessfully) {
       final current = state as TaskLoadedSuccessfully;
@@ -58,14 +58,11 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  /// فلترة بنوع التصنيف (عمل / دراسة / شخصي...)
   void setCategoryFilter(TaskCategory? category) {
     if (state is TaskLoadedSuccessfully) {
       final current = state as TaskLoadedSuccessfully;
       final isSame = current.categoryFilter == category;
-      final newCategory = isSame
-          ? null
-          : category; // الضغط عليه مجدداً يلغي التحديد
+      final newCategory = isSame ? null : category;
 
       final filtered = _applyFilters(
         tasks: current.allTasks,
@@ -83,21 +80,20 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  /// الدالة المركزية لتطبيق الفلاتر والبحث
   List<TaskEntity> _applyFilters({
     required List<TaskEntity> tasks,
     required String query,
     required TaskFilterStatus status,
     required TaskCategory? category,
   }) {
-    return tasks.where((task) {
-      // 1. فلتر البحث بالنص في العنوان أو الوصف
+    final filtered = tasks.where((task) {
+      // مطابقة البحث
       final matchesQuery =
           query.isEmpty ||
           task.title.toLowerCase().contains(query.toLowerCase()) ||
           task.description.toLowerCase().contains(query.toLowerCase());
 
-      // 2. فلتر الحالة
+      // مطابقة الحالة
       bool matchesStatus = true;
       switch (status) {
         case TaskFilterStatus.all:
@@ -114,20 +110,31 @@ class TaskCubit extends Cubit<TaskState> {
           break;
       }
 
-      // 3. فلتر التصنيف
+      // مطابقة التصنيف
       final matchesCategory = category == null || task.category == category;
 
       return matchesQuery && matchesStatus && matchesCategory;
     }).toList();
+
+    //  فرز ذكي: تظهر المهام المثبتة (Pinned) دائماً في أعلى القائمة
+    filtered.sort((a, b) {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return 0;
+    });
+
+    return filtered;
   }
 
-  /// إضافة مهمة مع الحقول الجديدة
   Future<void> addTask({
     required String title,
     required String description,
     DateTime? dueDate,
     TaskPriority priority = TaskPriority.medium,
     TaskCategory category = TaskCategory.personal,
+    List<SubTaskEntity> subTasks = const [],
+    bool isPinned = false,
+    TaskRecurrence recurrence = TaskRecurrence.none,
   }) async {
     try {
       final newTask = TaskEntity(
@@ -138,6 +145,11 @@ class TaskCubit extends Cubit<TaskState> {
         dueDate: dueDate,
         priority: priority,
         category: category,
+        subTasks: subTasks,
+        isPinned: isPinned,
+        recurrence: recurrence,
+        streak: 0,
+        focusMinutes: 0,
       );
       await repository.addTask(newTask);
       await _refreshWithCurrentFilters();
@@ -146,10 +158,18 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  /// تبديل حالة الإنجاز
   Future<void> toggleTaskStatus(TaskEntity task) async {
     try {
-      final updated = task.copyWith(isCompleted: !task.isCompleted);
+      final willBeCompleted = !task.isCompleted;
+      final newStreak =
+          (willBeCompleted && task.recurrence != TaskRecurrence.none)
+          ? task.streak + 1
+          : task.streak;
+
+      final updated = task.copyWith(
+        isCompleted: willBeCompleted,
+        streak: newStreak,
+      );
       await repository.updateTask(updated);
       await _refreshWithCurrentFilters();
     } catch (e) {
@@ -157,7 +177,51 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  /// تعديل مهمة
+  Future<void> togglePinTask(TaskEntity task) async {
+    try {
+      final updated = task.copyWith(isPinned: !task.isPinned);
+      await repository.updateTask(updated);
+      await _refreshWithCurrentFilters();
+    } catch (e) {
+      emit(const TaskError(message: 'فشل في تغيير تثبيت المهمة'));
+    }
+  }
+
+  Future<void> addFocusMinutes(TaskEntity task, int minutes) async {
+    try {
+      final updated = task.copyWith(focusMinutes: task.focusMinutes + minutes);
+      await repository.updateTask(updated);
+      await _refreshWithCurrentFilters();
+    } catch (e) {
+      emit(const TaskError(message: 'فشل في حفظ دقائق التركيز'));
+    }
+  }
+
+  Future<void> toggleSubTask(TaskEntity task, String subTaskId) async {
+    try {
+      final updatedSubTasks = task.subTasks.map((s) {
+        if (s.id == subTaskId) {
+          return s.copyWith(isCompleted: !s.isCompleted);
+        }
+        return s;
+      }).toList();
+
+      final allDone =
+          updatedSubTasks.isNotEmpty &&
+          updatedSubTasks.every((s) => s.isCompleted);
+
+      final updatedTask = task.copyWith(
+        subTasks: updatedSubTasks,
+        isCompleted: allDone ? true : task.isCompleted,
+      );
+
+      await repository.updateTask(updatedTask);
+      await _refreshWithCurrentFilters();
+    } catch (e) {
+      emit(const TaskError(message: 'فشل في تحديث المهمة الفرعية'));
+    }
+  }
+
   Future<void> editTask({
     required TaskEntity task,
     required String newTitle,
@@ -165,6 +229,9 @@ class TaskCubit extends Cubit<TaskState> {
     DateTime? newDueDate,
     TaskPriority? newPriority,
     TaskCategory? newCategory,
+    List<SubTaskEntity>? newSubTasks,
+    bool? newIsPinned,
+    TaskRecurrence? newRecurrence,
   }) async {
     try {
       final updated = task.copyWith(
@@ -173,6 +240,9 @@ class TaskCubit extends Cubit<TaskState> {
         dueDate: newDueDate,
         priority: newPriority,
         category: newCategory,
+        subTasks: newSubTasks ?? task.subTasks,
+        isPinned: newIsPinned ?? task.isPinned,
+        recurrence: newRecurrence ?? task.recurrence,
       );
       await repository.updateTask(updated);
       await _refreshWithCurrentFilters();
@@ -181,7 +251,6 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  /// حذف مهمة
   Future<void> deleteTask(TaskEntity task) async {
     try {
       _lastDeletedTask = task;
@@ -192,7 +261,6 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  /// تراجع عن الحذف
   Future<void> undoDelete() async {
     if (_lastDeletedTask != null) {
       try {
@@ -205,7 +273,31 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  /// إعادة تحميل مع الحفاظ على الفلاتر المحددة حالياً
+  Future<String> exportTasksJson() async {
+    final tasks = await repository.getTasks();
+    final list = tasks.map((t) => TaskModel.fromEntity(t).toMap()).toList();
+    return const JsonEncoder.withIndent('  ').convert(list);
+  }
+
+  Future<int> importTasksJson(String jsonString) async {
+    try {
+      final decoded = jsonDecode(jsonString);
+      if (decoded is! List) throw Exception('صيغة غير صالحة');
+      int count = 0;
+      for (final item in decoded) {
+        if (item is Map) {
+          final taskModel = TaskModel.fromMap(Map<String, dynamic>.from(item));
+          await repository.addTask(taskModel);
+          count++;
+        }
+      }
+      await _refreshWithCurrentFilters();
+      return count;
+    } catch (e) {
+      throw Exception('فشل في استيراد البيانات: $e');
+    }
+  }
+
   Future<void> _refreshWithCurrentFilters() async {
     if (state is TaskLoadedSuccessfully) {
       final current = state as TaskLoadedSuccessfully;

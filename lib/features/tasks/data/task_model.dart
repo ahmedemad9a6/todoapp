@@ -1,3 +1,4 @@
+import 'package:todoapp/features/tasks/domain/sub_task_entity.dart';
 import 'package:todoapp/features/tasks/domain/task_entity.dart';
 import 'package:todoapp/features/tasks/domain/task_enums.dart';
 
@@ -11,6 +12,11 @@ class TaskModel extends TaskEntity {
     super.dueDate,
     super.priority = TaskPriority.medium,
     super.category = TaskCategory.personal,
+    super.subTasks = const [],
+    super.isPinned = false,
+    super.recurrence = TaskRecurrence.none,
+    super.streak = 0,
+    super.focusMinutes = 0,
   });
 
   factory TaskModel.fromEntity(TaskEntity entity) {
@@ -23,10 +29,14 @@ class TaskModel extends TaskEntity {
       dueDate: entity.dueDate,
       priority: entity.priority,
       category: entity.category,
+      subTasks: entity.subTasks,
+      isPinned: entity.isPinned,
+      recurrence: entity.recurrence,
+      streak: entity.streak,
+      focusMinutes: entity.focusMinutes,
     );
   }
 
-  @override
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -35,8 +45,17 @@ class TaskModel extends TaskEntity {
       'isCompleted': isCompleted,
       'createdAt': createdAt.toIso8601String(),
       'dueDate': dueDate?.toIso8601String(),
-      'priority': priority.name, // حفظ كنص (low, medium, high)
-      'category': category.name, // حفظ كنص (personal, work...)
+      'priority': priority.name,
+      'category': category.name,
+      'subTasks': subTasks
+          .map(
+            (s) => {'id': s.id, 'title': s.title, 'isCompleted': s.isCompleted},
+          )
+          .toList(),
+      'isPinned': isPinned,
+      'recurrence': recurrence.name,
+      'streak': streak,
+      'focusMinutes': focusMinutes,
     };
   }
 
@@ -50,7 +69,6 @@ class TaskModel extends TaskEntity {
       dueDate: map['dueDate'] != null
           ? DateTime.parse(map['dueDate'] as String)
           : null,
-      // قراءة آمنة مع قيمة افتراضية للبيانات القديمة
       priority: TaskPriority.values.firstWhere(
         (e) => e.name == map['priority'],
         orElse: () => TaskPriority.medium,
@@ -59,6 +77,24 @@ class TaskModel extends TaskEntity {
         (e) => e.name == map['category'],
         orElse: () => TaskCategory.personal,
       ),
+      subTasks:
+          (map['subTasks'] as List<dynamic>?)
+              ?.map(
+                (item) => SubTaskEntity(
+                  id: item['id'] as String,
+                  title: item['title'] as String,
+                  isCompleted: item['isCompleted'] as bool? ?? false,
+                ),
+              )
+              .toList() ??
+          const [],
+      isPinned: (map['isPinned'] as bool?) ?? false,
+      recurrence: TaskRecurrence.values.firstWhere(
+        (e) => e.name == map['recurrence'],
+        orElse: () => TaskRecurrence.none,
+      ),
+      streak: (map['streak'] as int?) ?? 0,
+      focusMinutes: (map['focusMinutes'] as int?) ?? 0,
     );
   }
 }

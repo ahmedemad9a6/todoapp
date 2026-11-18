@@ -16,10 +16,10 @@ class InMemoryTaskRepositoryImpl implements TaskRepository {
 
   @override
   Future<List<TaskEntity>> getTasks() async {
+    // محاكاة تأخير زمني بسيط للعمليات غير المتزامنة
     await Future.delayed(const Duration(microseconds: 1));
-    return List.unmodifiable(
-      _tasks,
-    ); //!unmodified makes it read only to the cubit.
+    // إرجاع قائمة غير قابلة للتعديل لحماية البيانات من التعديل الخارجي المباشر
+    return List.unmodifiable(_tasks);
   }
 
   @override

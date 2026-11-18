@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ThemeCubit extends Cubit<ThemeMode> {
+  // الحالة الابتدائية: اتباع إعدادات نظام تشغيل جهاز المستخدم
   ThemeCubit() : super(ThemeMode.system);
 
-  /// التبديل بين الوضع الليلي والنهاري
   void toggleTheme() {
     if (state == ThemeMode.dark) {
       emit(ThemeMode.light);
@@ -13,7 +13,6 @@ class ThemeCubit extends Cubit<ThemeMode> {
     }
   }
 
-  /// التحقق إن كان الوضع النشط داكناً
   bool isDark(BuildContext context) {
     if (state == ThemeMode.system) {
       return MediaQuery.of(context).platformBrightness == Brightness.dark;

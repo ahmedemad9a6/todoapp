@@ -1,15 +1,21 @@
 import 'package:equatable/equatable.dart';
+import 'package:todoapp/features/tasks/domain/sub_task_entity.dart';
 import 'package:todoapp/features/tasks/domain/task_enums.dart';
 
 class TaskEntity extends Equatable {
-  final String id;
-  final String title;
-  final String description;
-  final bool isCompleted;
-  final DateTime createdAt;
-  final DateTime? dueDate; // 👈 تاريخ الاستحقاق (اختياري)
-  final TaskPriority priority; // 👈 مستوى الأولوية
-  final TaskCategory category; // 👈 التصنيف
+  final String id; // المعرّف الفريد عالمياً (UUID)
+  final String title; // عنوان المهمة الأساسي
+  final String description; // تفاصيل وملاحظات إضافية
+  final bool isCompleted; // هل المهمة مكتملة
+  final DateTime createdAt; // تاريخ وتوقيت إنشاء المهمة
+  final DateTime? dueDate; // تاريخ الاستحقاق النهائي (اختياري)
+  final TaskPriority priority; // مستوى الأولوية (منخفضة، متوسطة، مرتفعة)
+  final TaskCategory category; // تصنيف المهمة (عمل، دراسة، شخصي...)
+  final List<SubTaskEntity> subTasks; // قائمة المهام الفرعية (Checklist)
+  final bool isPinned; // تثبيت المهمة في قمة الشاشة 📌
+  final TaskRecurrence recurrence; // نوع التكرار وبناء العادات 🔄
+  final int streak; // عداد أيام الالتزام المتتالية 🔥
+  final int focusMinutes; // مجموع دقائق التركيز عبر مؤقت بومودورو ⏱️
 
   const TaskEntity({
     required this.id,
@@ -20,9 +26,13 @@ class TaskEntity extends Equatable {
     this.dueDate,
     this.priority = TaskPriority.medium,
     this.category = TaskCategory.personal,
+    this.subTasks = const [],
+    this.isPinned = false,
+    this.recurrence = TaskRecurrence.none,
+    this.streak = 0,
+    this.focusMinutes = 0,
   });
 
-  /// فحص هل المهمة مستحقة اليوم
   bool get isDueToday {
     if (dueDate == null) return false;
     final now = DateTime.now();
@@ -31,13 +41,18 @@ class TaskEntity extends Equatable {
         dueDate!.day == now.day;
   }
 
-  /// فحص هل المهمة متأخرة عن موعدها
   bool get isOverdue {
     if (dueDate == null || isCompleted) return false;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final due = DateTime(dueDate!.year, dueDate!.month, dueDate!.day);
     return due.isBefore(today);
+  }
+
+  double get progress {
+    if (subTasks.isEmpty) return isCompleted ? 1.0 : 0.0;
+    final completedCount = subTasks.where((s) => s.isCompleted).length;
+    return completedCount / subTasks.length;
   }
 
   TaskEntity copyWith({
@@ -49,6 +64,11 @@ class TaskEntity extends Equatable {
     DateTime? dueDate,
     TaskPriority? priority,
     TaskCategory? category,
+    List<SubTaskEntity>? subTasks,
+    bool? isPinned,
+    TaskRecurrence? recurrence,
+    int? streak,
+    int? focusMinutes,
   }) {
     return TaskEntity(
       id: id ?? this.id,
@@ -59,6 +79,11 @@ class TaskEntity extends Equatable {
       dueDate: dueDate ?? this.dueDate,
       priority: priority ?? this.priority,
       category: category ?? this.category,
+      subTasks: subTasks ?? this.subTasks,
+      isPinned: isPinned ?? this.isPinned,
+      recurrence: recurrence ?? this.recurrence,
+      streak: streak ?? this.streak,
+      focusMinutes: focusMinutes ?? this.focusMinutes,
     );
   }
 
@@ -72,5 +97,10 @@ class TaskEntity extends Equatable {
     dueDate,
     priority,
     category,
+    subTasks,
+    isPinned,
+    recurrence,
+    streak,
+    focusMinutes,
   ];
 }

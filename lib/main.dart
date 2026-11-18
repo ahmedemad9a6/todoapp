@@ -3,23 +3,27 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 
+import 'package:todoapp/core/services/notification_service.dart';
 import 'package:todoapp/core/theme/app_theme.dart';
 import 'package:todoapp/core/theme/theme_cubit.dart';
 import 'package:todoapp/features/tasks/data/hive_task_repository_imp.dart';
 import 'package:todoapp/features/tasks/domain/task_repository.dart';
 import 'package:todoapp/features/tasks/presentation/cubit/task_cubit.dart';
+import 'package:todoapp/features/tasks/presentation/pages/splash_page.dart';
 import 'package:todoapp/features/tasks/presentation/pages/tasks_page.dart';
 
 void main() async {
-  // 1. ضمان تهيئة خدمات فلاتر الأساسية
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. تهيئة Hive وفتح الصندوق
   await Hive.initFlutter();
   const String tasksBoxName = "tasks_box";
   final tasksBox = await Hive.openBox(tasksBoxName);
 
-  // 3. إنشاء المستودع بحقن الصندوق
+  try {
+    await NotificationService().init();
+    await NotificationService().requestPermissions();
+  } catch (_) {}
+
   final TaskRepository taskRepository = HiveTaskRepositoryImp(
     taskBox: tasksBox,
   );
@@ -44,23 +48,24 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'تطبيق المهام',
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false, // إخفاء شريط الديباج المزعج في الزاوية
 
-      // إعداد اتجاه اللغة العربية من اليمين إلى اليسار (RTL)
-      locale: const Locale('ar', 'SA'),
-      supportedLocales: const [Locale('ar', 'SA'), Locale('en', 'US')],
+            locale: const Locale('ar', 'SA'),
+      supportedLocales: const [
+        Locale('ar', 'SA'), // العربية (أساسي)
+        Locale('en', 'US'), // الإنجليزية (اختياري)
+      ],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
 
-      // تطبيق نظام الثيم ومتابعة تغيرات ThemeCubit للوضع الليلي والنهاري
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+            theme: AppTheme.lightTheme, // ثيم الوضع النهاري
+      darkTheme: AppTheme.darkTheme, // ثيم الوضع الليلي
       themeMode: context.watch<ThemeCubit>().state,
 
-      home: const TasksPage(),
+      home: const SplashPage(),
     );
   }
 }

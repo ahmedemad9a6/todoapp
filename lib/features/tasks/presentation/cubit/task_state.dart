@@ -14,11 +14,11 @@ class TaskInitial extends TaskState {}
 class TaskLoading extends TaskState {}
 
 class TaskLoadedSuccessfully extends TaskState {
-  final List<TaskEntity> allTasks;
-  final List<TaskEntity> filteredTasks;
-  final String searchQuery;
-  final TaskFilterStatus statusFilter;
-  final TaskCategory? categoryFilter;
+  final List<TaskEntity> allTasks;       
+  final List<TaskEntity> filteredTasks;  // القائمة المفلترة المعروضة حالياً على الشاشة بعد تطبيق البحث والتصنيف
+  final String searchQuery;              // نص البحث الفوري المكتوب حالياً
+  final TaskFilterStatus statusFilter;   // فلتر الحالة النشط (الكل، قيد الإنجاز، المكتملة، اليوم)
+  final TaskCategory? categoryFilter;    // فلتر التصنيف النشط (عمل، شخصي...) أو null لعرض الجميع
 
   const TaskLoadedSuccessfully({
     required this.allTasks,
