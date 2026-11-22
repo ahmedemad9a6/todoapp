@@ -17,47 +17,32 @@ class EmptyTasksView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // حلقات هالات ضوئية متداخلة تعطي عمقاً بصرياً فخماً
             Container(
-              width: 140,
-              height: 140,
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: theme.colorScheme.primary.withOpacity(isDark ? 0.08 : 0.04),
               ),
               child: Center(
                 child: Container(
-                  width: 104,
-                  height: 104,
+                  width: 88,
+                  height: 88,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: theme.colorScheme.primary.withOpacity(isDark ? 0.14 : 0.08),
                   ),
                   child: Center(
                     child: Container(
-                      width: 72,
-                      height: 72,
+                      width: 60,
+                      height: 60,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.colorScheme.primary,
-                            const Color(0xFF8B5CF6),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.colorScheme.primary.withOpacity(0.35),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
+                        color: theme.colorScheme.primary,
                       ),
                       child: const Icon(
-                        Icons.done_all_rounded,
-                        size: 38,
+                        Icons.check_rounded,
+                        size: 32,
                         color: Colors.white,
                       ),
                     ),
@@ -65,75 +50,40 @@ class EmptyTasksView extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 28),
-
-            // عنوان الواجهة الفارغة
+            const SizedBox(height: 24),
             Text(
-              'لا توجد مهام حالياً',
+              'No Tasks Found',
               style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
                 color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
             ),
-            const SizedBox(height: 10),
-
-            // رسالة إيجابية ومحفزة
+            const SizedBox(height: 8),
             Text(
-              'لا توجد مهام حالياً في هذا القسم.\nاستمتع بوقتك أو أضف مهمة جديدة للبدء في تحقيق أهدافك!',
+              'There are no tasks in this view.\nCreate a new task to organize your work.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
-                height: 1.6,
-                color: theme.colorScheme.outline.withOpacity(0.9),
+                height: 1.5,
+                color: theme.colorScheme.outline,
               ),
             ),
-            const SizedBox(height: 26),
-
-            // زر إضافة المهمة بتدرج لوني وظل أنيق
-            InkWell(
-              onTap: () {
-                HapticFeedback.mediumImpact();
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () {
+                HapticFeedback.lightImpact();
                 onAddTask();
               },
-              borderRadius: BorderRadius.circular(18),
-              child: Container(
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Add Task'),
+              style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 26,
-                  vertical: 14,
+                  horizontal: 24,
+                  vertical: 12,
                 ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.primary,
-                      const Color(0xFF4F46E5),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withOpacity(0.3),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.add_rounded, color: Colors.white, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'إضافة أول مهمة',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),

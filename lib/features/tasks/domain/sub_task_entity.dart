@@ -1,9 +1,9 @@
 import 'package:equatable/equatable.dart';
 
 class SubTaskEntity extends Equatable {
-  final String id;          // المعرف الفريد للمهمة الفرعية
-  final String title;       // عنوان الخطوة الفرعية
-  final bool isCompleted;   // حالة الإنجاز (تمت أو لم تتم)
+  final String id;
+  final String title;
+  final bool isCompleted;
 
   const SubTaskEntity({
     required this.id,

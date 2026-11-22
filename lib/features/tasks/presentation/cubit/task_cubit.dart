@@ -10,6 +10,7 @@ import 'package:todoapp/features/tasks/presentation/cubit/task_state.dart';
 
 class TaskCubit extends Cubit<TaskState> {
   final TaskRepository repository;
+
   final _uuid = const Uuid();
 
   TaskEntity? _lastDeletedTask;
@@ -28,7 +29,7 @@ class TaskCubit extends Cubit<TaskState> {
       );
       emit(TaskLoadedSuccessfully(allTasks: tasks, filteredTasks: filtered));
     } catch (e) {
-      emit(TaskError(message: 'فشل في تحميل المهام: $e'));
+      emit(TaskError(message: 'Failed to load tasks: $e'));
     }
   }
 
@@ -88,7 +89,7 @@ class TaskCubit extends Cubit<TaskState> {
   }) {
     final filtered = tasks.where((task) {
       // مطابقة البحث
-      final matchesQuery =
+      final bool  matchesQuery =
           query.isEmpty ||
           task.title.toLowerCase().contains(query.toLowerCase()) ||
           task.description.toLowerCase().contains(query.toLowerCase());
@@ -152,9 +153,38 @@ class TaskCubit extends Cubit<TaskState> {
         focusMinutes: 0,
       );
       await repository.addTask(newTask);
-      await _refreshWithCurrentFilters();
+
+      // Ensure that if the user had a filter that excludes the new task (e.g. Completed filter or other Category),
+      // we reset the filter so the newly added task is guaranteed to be visible!
+      if (state is TaskLoadedSuccessfully) {
+        final current = state as TaskLoadedSuccessfully;
+        final isExcludedByStatus = current.statusFilter == TaskFilterStatus.completed ||
+            (current.statusFilter == TaskFilterStatus.today && !newTask.isDueToday);
+        final isExcludedByCategory = current.categoryFilter != null && current.categoryFilter != category;
+
+        final newStatus = isExcludedByStatus ? TaskFilterStatus.all : current.statusFilter;
+        final newCategory = isExcludedByCategory ? null : current.categoryFilter;
+
+        final tasks = await repository.getTasks();
+        final filtered = _applyFilters(
+          tasks: tasks,
+          query: '',
+          status: newStatus,
+          category: newCategory,
+        );
+        emit(current.copyWith(
+          allTasks: tasks,
+          filteredTasks: filtered,
+          searchQuery: '',
+          statusFilter: newStatus,
+          categoryFilter: newCategory,
+          clearCategoryFilter: newCategory == null,
+        ));
+      } else {
+        await loadTasks();
+      }
     } catch (e) {
-      emit(const TaskError(message: 'فشل في إضافة المهمة'));
+      emit(TaskError(message: 'Failed to add task: $e'));
     }
   }
 
@@ -173,7 +203,7 @@ class TaskCubit extends Cubit<TaskState> {
       await repository.updateTask(updated);
       await _refreshWithCurrentFilters();
     } catch (e) {
-      emit(const TaskError(message: 'فشل في تحديث حالة المهمة'));
+      emit(const TaskError(message: 'Failed to update task status'));
     }
   }
 
@@ -183,7 +213,7 @@ class TaskCubit extends Cubit<TaskState> {
       await repository.updateTask(updated);
       await _refreshWithCurrentFilters();
     } catch (e) {
-      emit(const TaskError(message: 'فشل في تغيير تثبيت المهمة'));
+      emit(const TaskError(message: 'Failed to toggle pin state'));
     }
   }
 
@@ -193,7 +223,7 @@ class TaskCubit extends Cubit<TaskState> {
       await repository.updateTask(updated);
       await _refreshWithCurrentFilters();
     } catch (e) {
-      emit(const TaskError(message: 'فشل في حفظ دقائق التركيز'));
+      emit(const TaskError(message: 'Failed to record focus minutes'));
     }
   }
 
@@ -218,7 +248,7 @@ class TaskCubit extends Cubit<TaskState> {
       await repository.updateTask(updatedTask);
       await _refreshWithCurrentFilters();
     } catch (e) {
-      emit(const TaskError(message: 'فشل في تحديث المهمة الفرعية'));
+      emit(const TaskError(message: 'Failed to update subtask'));
     }
   }
 
@@ -247,7 +277,7 @@ class TaskCubit extends Cubit<TaskState> {
       await repository.updateTask(updated);
       await _refreshWithCurrentFilters();
     } catch (e) {
-      emit(const TaskError(message: 'فشل في تعديل المهمة'));
+      emit(const TaskError(message: 'Failed to edit task'));
     }
   }
 
@@ -257,7 +287,7 @@ class TaskCubit extends Cubit<TaskState> {
       await repository.deleteTask(task.id);
       await _refreshWithCurrentFilters();
     } catch (e) {
-      emit(const TaskError(message: 'فشل في حذف المهمة'));
+      emit(const TaskError(message: 'Failed to delete task'));
     }
   }
 
@@ -268,7 +298,7 @@ class TaskCubit extends Cubit<TaskState> {
         _lastDeletedTask = null;
         await _refreshWithCurrentFilters();
       } catch (e) {
-        emit(const TaskError(message: 'فشل في استعادة المهمة'));
+        emit(const TaskError(message: 'Failed to restore task'));
       }
     }
   }
@@ -282,7 +312,7 @@ class TaskCubit extends Cubit<TaskState> {
   Future<int> importTasksJson(String jsonString) async {
     try {
       final decoded = jsonDecode(jsonString);
-      if (decoded is! List) throw Exception('صيغة غير صالحة');
+      if (decoded is! List) throw Exception('Invalid JSON format: expected a list');
       int count = 0;
       for (final item in decoded) {
         if (item is Map) {
@@ -294,7 +324,7 @@ class TaskCubit extends Cubit<TaskState> {
       await _refreshWithCurrentFilters();
       return count;
     } catch (e) {
-      throw Exception('فشل في استيراد البيانات: $e');
+      throw Exception('Failed to import tasks: $e');
     }
   }
 

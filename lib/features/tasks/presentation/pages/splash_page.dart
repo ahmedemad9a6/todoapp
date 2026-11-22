@@ -23,35 +23,32 @@ class _SplashPageState extends State<SplashPage>
   late final Animation<Offset> _textSlideAnimation;
   late final Animation<double> _bottomFadeAnimation;
   late final Animation<double> _pulseAnimation;
+  Timer? _navigationTimer;
 
   @override
   void initState() {
     super.initState();
 
-    // اهتزاز لمسي خفيف وأنيق عند بدء فتح التطبيق
     HapticFeedback.lightImpact();
 
-    // 1. وحدة التحكم الرئيسية بالحركات المتسلسلة (Staggered Animations)
     _mainController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 1600),
     );
 
-    // 2. وحدة تحكم بنبض الهالة الضوئية الدائري (Subtle Breathing Glow)
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
 
-    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
+    _pulseAnimation = Tween<double>(begin: 0.90, end: 1.10).animate(
       CurvedAnimation(
         parent: _pulseController,
         curve: Curves.easeInOutSine,
       ),
     );
 
-    // حركة الشعار (ظهور تدريجي مع تمدد ارتدادي ممتع)
-    _logoScaleAnimation = Tween<double>(begin: 0.4, end: 1.0).animate(
+    _logoScaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(
         parent: _mainController,
         curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
@@ -65,9 +62,8 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // حركة النصوص (انزلاق للأعلى مع تلاشي للظهور)
     _textSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.45),
+      begin: const Offset(0, 0.35),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(
@@ -83,7 +79,6 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // حركة الشريط السفلي ورقم الإصدار
     _bottomFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _mainController,
@@ -91,37 +86,28 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // بدء الحركات
     _mainController.forward();
 
-    // الانتقال التلقائي السلس إلى الصفحة الرئيسية بعد اكتمال العرض
-    Timer(const Duration(milliseconds: 2700), _navigateToHome);
+    _navigationTimer = Timer(const Duration(milliseconds: 2200), _navigateToHome);
   }
 
   void _navigateToHome() {
     if (!mounted) return;
-
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 600),
         pageBuilder: (context, animation, secondaryAnimation) =>
             const TasksPage(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // انتقال سلس وناعم عبر التلاشي (Smooth Fade Transition)
-          return FadeTransition(
-            opacity: CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeInOutCubic,
-            ),
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
-        transitionDuration: const Duration(milliseconds: 650),
       ),
     );
   }
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _mainController.dispose();
     _pulseController.dispose();
     super.dispose();
@@ -129,55 +115,45 @@ class _SplashPageState extends State<SplashPage>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = AppTheme.primaryColor;
-    final secondary = AppTheme.secondaryColor;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primary = theme.colorScheme.primary;
+    final secondary = theme.colorScheme.secondary;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF0B0F19)
-          : const Color(0xFFF8FAFC),
       body: Stack(
         children: [
-          // خلفية هادئة بتدرج شعاعي يعطي عمقاً بصرياً فخماً
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(0, -0.15),
-                  radius: 1.1,
-                  colors: isDark
-                      ? [
-                          primary.withOpacity(0.18),
-                          secondary.withOpacity(0.06),
-                          Colors.transparent,
-                        ]
-                      : [
-                          primary.withOpacity(0.09),
-                          secondary.withOpacity(0.03),
-                          Colors.transparent,
-                        ],
-                  stops: const [0.0, 0.55, 1.0],
-                ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(0, -0.15),
+                radius: 1.2,
+                colors: isDark
+                    ? [
+                        const Color(0xFF1E1B4B).withOpacity(0.4),
+                        const Color(0xFF0F172A),
+                        const Color(0xFF0B0F19),
+                      ]
+                    : [
+                        primary.withOpacity(0.08),
+                        const Color(0xFFF1F5F9),
+                        const Color(0xFFF8FAFC),
+                      ],
               ),
             ),
           ),
-
-          // المحتوى المركزي (الشعار، العنوان، والوصف)
           Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 1. الشعار مع هالات النبض الضوئية
                   AnimatedBuilder(
                     animation: _pulseAnimation,
                     builder: (context, child) {
                       return Stack(
                         alignment: Alignment.center,
                         children: [
-                          // هالة التوهج الخارجية الكبرى
                           Transform.scale(
                             scale: _pulseAnimation.value,
                             child: Container(
@@ -186,35 +162,20 @@ class _SplashPageState extends State<SplashPage>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: primary.withOpacity(
-                                  isDark ? 0.12 : 0.08,
+                                  isDark ? 0.14 : 0.08,
                                 ),
                               ),
                             ),
                           ),
-                          // هالة التوهج المتوسطة
-                          Transform.scale(
-                            scale: (_pulseAnimation.value + 0.1) * 0.9,
-                            child: Container(
-                              width: 116,
-                              height: 116,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: secondary.withOpacity(
-                                  isDark ? 0.18 : 0.12,
-                                ),
-                              ),
-                            ),
-                          ),
-                          // الأيقونة المركزية مع حركة الظهور والارتداد
                           FadeTransition(
                             opacity: _logoFadeAnimation,
                             child: ScaleTransition(
                               scale: _logoScaleAnimation,
                               child: Container(
-                                width: 92,
-                                height: 92,
+                                width: 88,
+                                height: 88,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(28),
+                                  borderRadius: BorderRadius.circular(24),
                                   gradient: LinearGradient(
                                     colors: [
                                       primary,
@@ -227,48 +188,17 @@ class _SplashPageState extends State<SplashPage>
                                   boxShadow: [
                                     BoxShadow(
                                       color: primary.withOpacity(
-                                        isDark ? 0.45 : 0.35,
+                                        isDark ? 0.40 : 0.28,
                                       ),
-                                      blurRadius: 26,
-                                      offset: const Offset(0, 10),
+                                      blurRadius: 24,
+                                      offset: const Offset(0, 8),
                                     ),
                                   ],
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(
-                                      isDark ? 0.25 : 0.45,
-                                    ),
-                                    width: 1.5,
-                                  ),
                                 ),
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    // أيقونة إنجاز المهام المميزة
-                                    const Icon(
-                                      Icons.task_alt_rounded,
-                                      color: Colors.white,
-                                      size: 46,
-                                    ),
-                                    // وميض صغير في الزاوية يعطي طابع الحداثة
-                                    Positioned(
-                                      top: 14,
-                                      right: 14,
-                                      child: Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.white,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.white,
-                                              blurRadius: 6,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                child: const Icon(
+                                  Icons.check_rounded,
+                                  color: Colors.white,
+                                  size: 46,
                                 ),
                               ),
                             ),
@@ -277,10 +207,7 @@ class _SplashPageState extends State<SplashPage>
                       );
                     },
                   ),
-
-                  const SizedBox(height: 32),
-
-                  // 2. اسم التطبيق والشعار النصي
+                  const SizedBox(height: 28),
                   SlideTransition(
                     position: _textSlideAnimation,
                     child: FadeTransition(
@@ -288,27 +215,26 @@ class _SplashPageState extends State<SplashPage>
                       child: Column(
                         children: [
                           Text(
-                            'مهامي اليومية',
-                            style: GoogleFonts.cairo(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
+                            'Task Manager',
+                            style: GoogleFonts.inter(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w700,
                               letterSpacing: -0.5,
                               color: isDark
                                   ? const Color(0xFFF8FAFC)
                                   : const Color(0xFF0F172A),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
-                            'نظّم وقتك، أنجز مهامك، وحقّق أهدافك',
+                            'Organize your workflow and achieve your goals',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.cairo(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
                               color: isDark
                                   ? const Color(0xFF94A3B8)
                                   : const Color(0xFF64748B),
-                              letterSpacing: 0.2,
                             ),
                           ),
                         ],
@@ -319,24 +245,21 @@ class _SplashPageState extends State<SplashPage>
               ),
             ),
           ),
-
-          // 3. الجزء السفلي (مؤشر تحميل أنيق ورقم الإصدار)
           Positioned(
             left: 0,
             right: 0,
-            bottom: 38,
+            bottom: 36,
             child: FadeTransition(
               opacity: _bottomFadeAnimation,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // شريط تقدم مصغر وأنيق بنهايات مستديرة
                   SizedBox(
-                    width: 72,
+                    width: 64,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
-                        minHeight: 3.5,
+                        minHeight: 3,
                         backgroundColor: isDark
                             ? Colors.white.withOpacity(0.08)
                             : Colors.black.withOpacity(0.06),
@@ -344,12 +267,12 @@ class _SplashPageState extends State<SplashPage>
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Text(
-                    'الإصدار 1.0.0',
-                    style: GoogleFonts.cairo(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                    'Version 1.0.0',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
                       color: isDark
                           ? const Color(0xFF64748B)
                           : const Color(0xFF94A3B8),
@@ -364,4 +287,3 @@ class _SplashPageState extends State<SplashPage>
     );
   }
 }
-

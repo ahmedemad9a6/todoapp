@@ -24,7 +24,7 @@ class InMemoryTaskRepositoryImpl implements TaskRepository {
 
   @override
   Future<void> updateTask(TaskEntity task) async {
-    final index = _tasks.indexWhere((t) => t.id == task.id);
+    final  int  index = _tasks.indexWhere((t) => t.id == task.id);
     if (index != -1) {
       _tasks[index] = task;
     }

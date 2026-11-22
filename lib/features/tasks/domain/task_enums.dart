@@ -1,43 +1,40 @@
-
 enum TaskPriority {
-  low('منخفضة', 1),
-  medium('متوسطة', 2),
-  high('مرتفعة', 3);
+  low('Low', 1),
+  medium('Medium', 2),
+  high('High', 3);
 
-  final String label; // النص العربي المعروض في الواجهة
-  final int value; // القيمة العددية للترتيب والفرز البرمجي
+  final String label;
+  final int value;
   const TaskPriority(this.label, this.value);
 }
 
 enum TaskCategory {
-  personal('شخصي', '👤'),
-  work('عمل', '💼'),
-  study('دراسة', '📚'),
-  shopping('تسوق', '🛒'),
-  other('عام', '📌');
+  personal('Personal'),
+  work('Work'),
+  study('Study'),
+  shopping('Shopping'),
+  other('General');
 
-  final String label; // اسم التصنيف بالعربية
-  final String icon; // الرمز التعبيري المعبر عن التصنيف
-  const TaskCategory(this.label, this.icon);
+  final String label;
+const TaskCategory(this.label);
 }
 
 enum TaskFilterStatus {
-  all('الكل'),
-  pending('قيد الإنجاز'),
-  completed('المكتملة'),
-  today('اليوم');
+  all('All'),
+  pending('In Progress'),
+  completed('Completed'),
+  today('Today');
 
   final String label;
   const TaskFilterStatus(this.label);
 }
 
 enum TaskRecurrence {
-  none('بدون تكرار', '⏹️'),
-  daily('يومياً', '🔄'),
-  weekly('أسبوعياً', '📅'),
-  monthly('شهرياً', '🗓️');
+  none('Does not repeat'),
+  daily('Daily'),
+  weekly('Weekly'),
+  monthly('Monthly');
 
   final String label;
-  final String icon;
-  const TaskRecurrence(this.label, this.icon);
+  const TaskRecurrence(this.label);
 }

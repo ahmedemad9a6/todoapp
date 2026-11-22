@@ -3,19 +3,19 @@ import 'package:todoapp/features/tasks/domain/sub_task_entity.dart';
 import 'package:todoapp/features/tasks/domain/task_enums.dart';
 
 class TaskEntity extends Equatable {
-  final String id; // المعرّف الفريد عالمياً (UUID)
-  final String title; // عنوان المهمة الأساسي
-  final String description; // تفاصيل وملاحظات إضافية
-  final bool isCompleted; // هل المهمة مكتملة
-  final DateTime createdAt; // تاريخ وتوقيت إنشاء المهمة
-  final DateTime? dueDate; // تاريخ الاستحقاق النهائي (اختياري)
-  final TaskPriority priority; // مستوى الأولوية (منخفضة، متوسطة، مرتفعة)
-  final TaskCategory category; // تصنيف المهمة (عمل، دراسة، شخصي...)
-  final List<SubTaskEntity> subTasks; // قائمة المهام الفرعية (Checklist)
-  final bool isPinned; // تثبيت المهمة في قمة الشاشة 📌
-  final TaskRecurrence recurrence; // نوع التكرار وبناء العادات 🔄
-  final int streak; // عداد أيام الالتزام المتتالية 🔥
-  final int focusMinutes; // مجموع دقائق التركيز عبر مؤقت بومودورو ⏱️
+  final String id;
+  final String title;
+  final String description;
+  final bool isCompleted;
+  final DateTime createdAt;
+  final DateTime? dueDate;
+  final TaskPriority priority;
+  final TaskCategory category;
+  final List<SubTaskEntity> subTasks;
+  final bool isPinned;
+  final TaskRecurrence recurrence;
+  final int streak;
+  final int focusMinutes;
 
   const TaskEntity({
     required this.id,
@@ -23,7 +23,7 @@ class TaskEntity extends Equatable {
     this.description = '',
     this.isCompleted = false,
     required this.createdAt,
-    this.dueDate,
+    this.dueDate,// تاريخ الانتهاء
     this.priority = TaskPriority.medium,
     this.category = TaskCategory.personal,
     this.subTasks = const [],

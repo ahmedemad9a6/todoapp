@@ -12,15 +12,12 @@ class StatisticsPage extends StatelessWidget {
   void _exportBackup(BuildContext context) async {
     try {
       final jsonString = await context.read<TaskCubit>().exportTasksJson();
-      // نسخ النص البرمجي إلى حافظة الجهاز (Clipboard)
       await Clipboard.setData(ClipboardData(text: jsonString));
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'تم نسخ النسخة الاحتياطية (JSON) إلى الحافظة بنجاح 📋',
-            ),
+            content: Text('Backup JSON copied to clipboard'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -29,7 +26,7 @@ class StatisticsPage extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('فشل في التصدير: $e'),
+            content: Text('Export failed: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -43,19 +40,19 @@ class StatisticsPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('استيراد نسخة احتياطية (JSON)'),
+        title: const Text('Import Backup (JSON)'),
         content: TextField(
           controller: controller,
           maxLines: 6,
           decoration: const InputDecoration(
-            hintText: 'الصق نص الـ JSON هنا...',
+            hintText: 'Paste JSON content here...',
             border: OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: const Text('إلغاء'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () async {
@@ -69,7 +66,7 @@ class StatisticsPage extends StatelessWidget {
                     Navigator.of(dialogCtx).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('تم استيراد $count مهمة بنجاح 🎉'),
+                        content: Text('Successfully imported $count tasks'),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -78,7 +75,7 @@ class StatisticsPage extends StatelessWidget {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('خطأ في الاستيراد: $e'),
+                        content: Text('Import error: $e'),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -86,7 +83,7 @@ class StatisticsPage extends StatelessWidget {
                 }
               }
             },
-            child: const Text('استيراد'),
+            child: const Text('Import'),
           ),
         ],
       ),
@@ -96,118 +93,215 @@ class StatisticsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final state = context.watch<TaskCubit>().state;
 
-    // استخراج القائمة الكلية لجميع المهام من الـ Cubit
     List<TaskEntity> tasks = [];
     if (state is TaskLoadedSuccessfully) {
       tasks = state.allTasks;
     }
 
-    // حساب المعادلات الحسابية للإحصائيات
     final total = tasks.length;
     final completed = tasks.where((t) => t.isCompleted).length;
     final pending = total - completed;
     final overdue = tasks.where((t) => t.isOverdue).length;
     final rate = total > 0 ? (completed / total) : 0.0;
+    final totalFocusMinutes = tasks.fold<int>(0, (sum, t) => sum + t.focusMinutes);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('لوحة الإحصائيات والإنتاجية'),
+        title: const Text('Productivity & Analytics'),
         centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            color: theme.cardTheme.color,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-              child: Row(
-                children: [
-                  // مؤشر دائري جذاب يعرض نسبة الإنجاز
-                  SizedBox(
-                    width: 90,
-                    height: 90,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CircularProgressIndicator(
-                          value: rate,
-                          strokeWidth: 30,
-                          strokeCap: StrokeCap.round,
-                          backgroundColor: theme.colorScheme.primary
-                              .withOpacity(0.12),
-                          valueColor: AlwaysStoppedAnimation(
-                            rate == 1.0
-                                ? Colors.green.withOpacity(0.4)
-                                : theme.colorScheme.primary,
-                          ),
-                        ),
-                        Text(
-                          '${(rate * 100).toInt()}%',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: rate == 1.0
-                                ? Colors.black
-                                : theme.colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'معدل الإنجاز العام',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          rate == 1.0
-                              ? 'عمل أسطوري! أنجزت كافة مهامك بنجاح 🏆'
-                              : 'أنجزت $completed من أصل $total مهمة حتى الآن.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+          // Professional Metric Card with Apple Health style progress ring
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark ? const Color(0x1FFFFFFF) : const Color(0x0F000000),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0.0, end: rate),
+                  duration: const Duration(milliseconds: 700),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, animatedRate, child) {
+                    final isComplete = animatedRate >= 0.999 && total > 0;
+                    final ringColor = isComplete
+                        ? const Color(0xFF10B981)
+                        : theme.colorScheme.primary;
+
+                    return SizedBox(
+                      width: 96,
+                      height: 96,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox(
+                            width: 96,
+                            height: 96,
+                            child: CircularProgressIndicator(
+                              value: animatedRate,
+                              strokeWidth: 7,
+                              strokeCap: StrokeCap.round,
+                              backgroundColor: isDark
+                                  ? const Color(0xFF334155).withOpacity(0.5)
+                                  : const Color(0xFFE2E8F0),
+                              valueColor: AlwaysStoppedAnimation(ringColor),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: isComplete
+                                  ? Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.check_circle_rounded,
+                                          color: Color(0xFF10B981),
+                                          size: 26,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '100%',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: -0.2,
+                                            color: isDark
+                                                ? Colors.white
+                                                : const Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                                      textBaseline: TextBaseline.alphabetic,
+                                      children: [
+                                        Text(
+                                          '${(animatedRate * 100).toInt()}',
+                                          style: TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: -0.5,
+                                            color: isDark
+                                                ? Colors.white
+                                                : const Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        Text(
+                                          '%',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: ringColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Completion Rate',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: rate >= 1.0 && total > 0
+                                  ? const Color(0xFF10B981).withOpacity(0.12)
+                                  : theme.colorScheme.primary.withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              rate >= 1.0 && total > 0 ? 'Optimal' : 'Active',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: rate >= 1.0 && total > 0
+                                    ? const Color(0xFF10B981)
+                                    : theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        rate >= 1.0 && total > 0
+                            ? 'All tasks completed successfully.'
+                            : '$completed of $total tasks completed so far.',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          height: 1.4,
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           Row(
             children: [
               Expanded(
-                child: _buildMetricCard(
+                child: _buildAnimatedMetricCard(
                   theme: theme,
-                  title: 'إجمالي المهام',
-                  value: '$total',
-                  icon: Icons.assignment_rounded,
-                  color: Colors.blue,
+                  title: 'Total Tasks',
+                  targetValue: total,
+                  icon: Icons.assignment_outlined,
+                  color: const Color(0xFF2563EB),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildMetricCard(
+                child: _buildAnimatedMetricCard(
                   theme: theme,
-                  title: 'المكتملة',
-                  value: '$completed',
-                  icon: Icons.check_circle_rounded,
-                  color: Colors.green,
+                  title: 'Completed',
+                  targetValue: completed,
+                  icon: Icons.check_circle_outline_rounded,
+                  color: const Color(0xFF059669),
                 ),
               ),
             ],
@@ -216,31 +310,40 @@ class StatisticsPage extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _buildMetricCard(
+                child: _buildAnimatedMetricCard(
                   theme: theme,
-                  title: 'قيد الإنجاز',
-                  value: '$pending',
-                  icon: Icons.pending_actions_rounded,
-                  color: Colors.orange,
+                  title: 'In Progress',
+                  targetValue: pending,
+                  icon: Icons.pending_outlined,
+                  color: const Color(0xFFD97706),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildMetricCard(
+                child: _buildAnimatedMetricCard(
                   theme: theme,
-                  title: 'المتأخرة',
-                  value: '$overdue',
+                  title: 'Overdue',
+                  targetValue: overdue,
                   icon: Icons.warning_amber_rounded,
-                  color: Colors.red,
+                  color: const Color(0xFFDC2626),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          _buildAnimatedMetricCard(
+            theme: theme,
+            title: 'Total Focus Time',
+            targetValue: totalFocusMinutes,
+            suffix: ' min',
+            icon: Icons.timer_outlined,
+            color: const Color(0xFF4F46E5),
+          ),
+          const SizedBox(height: 16),
 
           Card(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
             color: theme.cardTheme.color,
             child: Padding(
@@ -249,9 +352,9 @@ class StatisticsPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'توزيع المهام حسب الأولوية',
+                    'Tasks by Priority',
                     style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -259,15 +362,16 @@ class StatisticsPage extends StatelessWidget {
                     final pCount = tasks.where((t) => t.priority == p).length;
                     final pRatio = total > 0 ? (pCount / total) : 0.0;
                     Color color;
-                    if (p == TaskPriority.high)
-                      color = Colors.red;
-                    else if (p == TaskPriority.medium)
-                      color = Colors.orange;
-                    else
-                      color = Colors.green;
+                    if (p == TaskPriority.high) {
+                      color = const Color(0xFFDC2626);
+                    } else if (p == TaskPriority.medium) {
+                      color = const Color(0xFFD97706);
+                    } else {
+                      color = const Color(0xFF059669);
+                    }
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 5),
                       child: Column(
                         children: [
                           Row(
@@ -276,22 +380,43 @@ class StatisticsPage extends StatelessWidget {
                               Row(
                                 children: [
                                   CircleAvatar(
-                                    radius: 4,
+                                    radius: 3.5,
                                     backgroundColor: color,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(p.label),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    p.label,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 13,
+                                    ),
+                                  ),
                                 ],
                               ),
-                              Text('$pCount مهمة (${(pRatio * 100).toInt()}%)'),
+                              Text(
+                                '$pCount tasks (${(pRatio * 100).toInt()}%)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.outline,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          LinearProgressIndicator(
-                            value: pRatio,
-                            backgroundColor: color.withOpacity(0.12),
-                            valueColor: AlwaysStoppedAnimation(color),
-                            borderRadius: BorderRadius.circular(4),
+                          const SizedBox(height: 6),
+                          TweenAnimationBuilder<double>(
+                            tween: Tween<double>(begin: 0.0, end: pRatio),
+                            duration: const Duration(milliseconds: 600),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, animatedRatio, child) {
+                              return LinearProgressIndicator(
+                                value: animatedRatio,
+                                minHeight: 5,
+                                backgroundColor: color.withOpacity(0.12),
+                                valueColor: AlwaysStoppedAnimation(color),
+                                borderRadius: BorderRadius.circular(4),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -301,11 +426,11 @@ class StatisticsPage extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           Card(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
             color: theme.cardTheme.color,
             child: Padding(
@@ -316,21 +441,22 @@ class StatisticsPage extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        Icons.backup_rounded,
+                        Icons.backup_outlined,
                         color: theme.colorScheme.primary,
+                        size: 20,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'إدارة النسخ الاحتياطي (JSON)',
+                        'Data Backup & Export (JSON)',
                         style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
-                    'احفظ مهامك كنسخة نصية أو استرجعها في أي جهاز آخر بكل سهولة.',
+                    'Export your tasks as a portable JSON file or restore them anytime.',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.outline,
                     ),
@@ -341,16 +467,16 @@ class StatisticsPage extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => _exportBackup(context),
-                          icon: const Icon(Icons.copy_all_rounded, size: 18),
-                          label: const Text('تصدير كـ JSON'),
+                          icon: const Icon(Icons.copy_rounded, size: 16),
+                          label: const Text('Export JSON'),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: FilledButton.tonalIcon(
                           onPressed: () => _showImportDialog(context),
-                          icon: const Icon(Icons.download_rounded, size: 18),
-                          label: const Text('استيراد مهام'),
+                          icon: const Icon(Icons.download_rounded, size: 16),
+                          label: const Text('Import Tasks'),
                         ),
                       ),
                     ],
@@ -359,39 +485,31 @@ class StatisticsPage extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildMetricCard({
+  Widget _buildAnimatedMetricCard({
     required ThemeData theme,
     required String title,
-    required String value,
+    required int targetValue,
     required IconData icon,
     required Color color,
+    String suffix = '',
   }) {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF151D2C) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? const Color(0x1AFFFFFF) : const Color(0x0F000000),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.2)
-                : Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,29 +520,36 @@ class StatisticsPage extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
                   color: theme.colorScheme.outline,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.all(7),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  color: color.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 18, color: color),
+                child: Icon(icon, size: 16, color: color),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-            ),
+          const SizedBox(height: 8),
+          TweenAnimationBuilder<int>(
+            tween: IntTween(begin: 0, end: targetValue),
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOutCubic,
+            builder: (context, animatedValue, child) {
+              return Text(
+                '$animatedValue$suffix',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+              );
+            },
           ),
         ],
       ),

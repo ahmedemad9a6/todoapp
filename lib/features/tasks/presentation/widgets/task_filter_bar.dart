@@ -45,168 +45,220 @@ class _TaskFilterBarState extends State<TaskFilterBar> {
     final state = context.watch<TaskCubit>().state;
     if (state is! TaskLoadedSuccessfully) return const SizedBox.shrink();
 
+    if (state.searchQuery.isEmpty && _searchController.text.isNotEmpty) {
+      _searchController.clear();
+    }
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Column(
-      children: [
-                Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Container(
-            height: 48,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Row 1: Search Bar with Integrated Category Selector
+          Container(
+            height: 44,
             decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF151D2C)
-                  : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(16),
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark
-                    ? const Color(0x1FFFFFFF)
-                    : const Color(0x0F000000),
+                color: isDark ? const Color(0x1FFFFFFF) : const Color(0x0F000000),
               ),
             ),
-            child: TextField(
-              controller: _searchController,
-              textAlignVertical: TextAlignVertical.center,
-              onChanged: (val) {
-                context.read<TaskCubit>().search(val);
-                setState(() {});
-              },
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                hintText: 'ابحث عن مهمة بالاسم أو الوصف...',
-                hintStyle: TextStyle(
-                  fontSize: 13,
-                  color: theme.colorScheme.outline.withOpacity(0.8),
-                ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                prefixIcon: Icon(
+            child: Row(
+              children: [
+                const SizedBox(width: 12),
+                Icon(
                   Icons.search_rounded,
-                  size: 20,
+                  size: 18,
                   color: theme.colorScheme.primary,
                 ),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          _searchController.clear();
-                          context.read<TaskCubit>().search('');
-                          setState(() {});
-                        },
-                      )
-                    : null,
-              ),
-            ),
-          ),
-        ),
-
-                SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Row(
-            children: TaskFilterStatus.values.map((status) {
-              final isSelected = state.statusFilter == status;
-              final count = _getCountForStatus(state, status);
-
-              return Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    context.read<TaskCubit>().setStatusFilter(status);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: isSelected
-                          ? LinearGradient(
-                              colors: [
-                                theme.colorScheme.primary,
-                                theme.colorScheme.primary.withOpacity(0.85),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            )
-                          : null,
-                      color: isSelected
-                          ? null
-                          : (isDark
-                              ? const Color(0xFF1E293B)
-                              : Colors.white),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected
-                            ? Colors.transparent
-                            : (isDark
-                                ? const Color(0x1AFFFFFF)
-                                : const Color(0x12000000)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (val) {
+                      context.read<TaskCubit>().search(val);
+                      setState(() {});
+                    },
+                    style: const TextStyle(fontSize: 13),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      hintText: 'Search tasks...',
+                      hintStyle: TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.outline,
                       ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: theme.colorScheme.primary.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ]
-                          : [],
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
                     ),
+                  ),
+                ),
+                if (_searchController.text.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 16),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      _searchController.clear();
+                      context.read<TaskCubit>().search('');
+                      setState(() {});
+                    },
+                  ),
+                Container(
+                  height: 20,
+                  width: 1,
+                  color: isDark ? const Color(0x1FFFFFFF) : const Color(0x1A000000),
+                ),
+                // Category Filter Menu inside Search Bar
+                PopupMenuButton<TaskCategory?>(
+                  initialValue: state.categoryFilter,
+                  tooltip: 'Filter by category',
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  onSelected: (cat) {
+                    HapticFeedback.selectionClick();
+                    context.read<TaskCubit>().setCategoryFilter(cat);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          status.label,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                            color: isSelected
-                                ? Colors.white
-                                : (isDark ? Colors.white70 : const Color(0xFF475569)),
-                          ),
+                        Icon(
+                          state.categoryFilter != null
+                              ? Icons.filter_alt_rounded
+                              : Icons.folder_outlined,
+                          size: 15,
+                          color: state.categoryFilter != null
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outline,
                         ),
-                        const SizedBox(width: 6),
-                        // عداد المهام الصغير داخل الشريحة
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.white.withOpacity(0.25)
-                                : (isDark
-                                    ? Colors.black26
-                                    : const Color(0xFFF1F5F9)),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                        const SizedBox(width: 5),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 80),
                           child: Text(
-                            '$count',
+                            state.categoryFilter?.label ?? 'Category',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: isSelected
-                                  ? Colors.white
-                                  : theme.colorScheme.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: state.categoryFilter != null
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.outline,
                             ),
                           ),
+                        ),
+                        const SizedBox(width: 2),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          size: 16,
+                          color: theme.colorScheme.outline,
                         ),
                       ],
                     ),
                   ),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem<TaskCategory?>(
+                      value: null,
+                      child: Text('All Categories'),
+                    ),
+                    const PopupMenuDivider(),
+                    ...TaskCategory.values.map(
+                      (cat) => PopupMenuItem<TaskCategory?>(
+                        value: cat,
+                        child: Text(cat.label),
+                      ),
+                    ),
+                  ],
                 ),
-              );
-            }).toList(),
+              ],
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+
+          // Row 2: Clean, Symmetrical Segmented Bar for Status
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: TaskFilterStatus.values.map((status) {
+                final isSelected = state.statusFilter == status;
+                final count = _getCountForStatus(state, status);
+
+                return Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      context.read<TaskCubit>().setStatusFilter(status);
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(vertical: 7),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? (isDark ? const Color(0xFF334155) : Colors.white)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                status.label,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                  color: isSelected
+                                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                                      : theme.colorScheme.outline,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '($count)',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                  color: isSelected
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outline.withOpacity(0.7),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -16,9 +16,10 @@ class TaskModel extends TaskEntity {
     super.isPinned = false,
     super.recurrence = TaskRecurrence.none,
     super.streak = 0,
+
     super.focusMinutes = 0,
   });
-
+  //converte data forme Entity to TaksModel
   factory TaskModel.fromEntity(TaskEntity entity) {
     return TaskModel(
       id: entity.id,
@@ -36,7 +37,7 @@ class TaskModel extends TaskEntity {
       focusMinutes: entity.focusMinutes,
     );
   }
-
+ // Converte From TaksModel to Map to Store in local database 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -58,43 +59,51 @@ class TaskModel extends TaskEntity {
       'focusMinutes': focusMinutes,
     };
   }
+  //Converte Frome Map to TaskModel to returene list of Taks
 
   factory TaskModel.fromMap(Map<String, dynamic> map) {
     return TaskModel(
-      id: map['id'] as String,
-      title: map['title'] as String,
-      description: (map['description'] as String?) ?? '',
-      isCompleted: (map['isCompleted'] as bool?) ?? false,
-      createdAt: DateTime.parse(map['createdAt'] as String),
+      id: map['id']?.toString() ?? '',
+      title: map['title']?.toString() ?? '',
+      description: map['description']?.toString() ?? '',
+      isCompleted: map['isCompleted'] == true || map['isCompleted'] == 1,
+      createdAt: map['createdAt'] != null
+          ? DateTime.tryParse(map['createdAt'].toString()) ?? DateTime.now()
+          : DateTime.now(),
       dueDate: map['dueDate'] != null
-          ? DateTime.parse(map['dueDate'] as String)
+          ? DateTime.tryParse(map['dueDate'].toString())
           : null,
       priority: TaskPriority.values.firstWhere(
-        (e) => e.name == map['priority'],
+        (e) => e.name == map['priority']?.toString(),
         orElse: () => TaskPriority.medium,
       ),
       category: TaskCategory.values.firstWhere(
-        (e) => e.name == map['category'],
+        (e) => e.name == map['category']?.toString(),
         orElse: () => TaskCategory.personal,
       ),
-      subTasks:
-          (map['subTasks'] as List<dynamic>?)
-              ?.map(
-                (item) => SubTaskEntity(
-                  id: item['id'] as String,
-                  title: item['title'] as String,
-                  isCompleted: item['isCompleted'] as bool? ?? false,
-                ),
-              )
-              .toList() ??
-          const [],
-      isPinned: (map['isPinned'] as bool?) ?? false,
+      subTasks: (map['subTasks'] is Iterable)
+          ? (map['subTasks'] as Iterable).map((item) {
+              if (item is Map) {
+                return SubTaskEntity(
+                  id: item['id']?.toString() ?? '',
+                  title: item['title']?.toString() ?? '',
+                  isCompleted: item['isCompleted'] == true || item['isCompleted'] == 1,
+                );
+              }
+              return SubTaskEntity(
+                id: '',
+                title: item?.toString() ?? '',
+                isCompleted: false,
+              );
+            }).toList()
+          : const [],
+      isPinned: map['isPinned'] == true || map['isPinned'] == 1,
       recurrence: TaskRecurrence.values.firstWhere(
-        (e) => e.name == map['recurrence'],
+        (e) => e.name == map['recurrence']?.toString(),
         orElse: () => TaskRecurrence.none,
       ),
-      streak: (map['streak'] as int?) ?? 0,
-      focusMinutes: (map['focusMinutes'] as int?) ?? 0,
+      streak: int.tryParse(map['streak']?.toString() ?? '0') ?? 0,
+      focusMinutes: int.tryParse(map['focusMinutes']?.toString() ?? '0') ?? 0,
     );
   }
 }

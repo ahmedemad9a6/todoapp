@@ -7,7 +7,6 @@ import 'package:todoapp/features/tasks/domain/task_enums.dart';
 
 class TaskBottomSheet extends StatefulWidget {
   final TaskEntity? taskToEdit;
-  // إن وُجد، نكون في وضع "التعديل"، وإن كان null نكون في وضع "الإضافة"
   final void Function(
     String title,
     String description,
@@ -18,7 +17,7 @@ class TaskBottomSheet extends StatefulWidget {
     bool isPinned,
     TaskRecurrence recurrence,
   )
-  onSave; // دالة الحفظ التي تُمرر البيانات المعدلة للواجهة الرئيسية والـ Cubit
+  onSave;
 
   const TaskBottomSheet({super.key, this.taskToEdit, required this.onSave});
 
@@ -38,13 +37,13 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
   late List<SubTaskEntity> _subTasks;
   late bool _isPinned;
   late TaskRecurrence _selectedRecurrence;
+  bool _showAdvancedDetails = false;
   final _uuid = const Uuid();
 
   @override
   void initState() {
     super.initState();
     final task = widget.taskToEdit;
-    // تعبئة البيانات مسبقاً إذا كنا في وضع تعديل مهمة حالية
     _titleController = TextEditingController(text: task?.title ?? '');
     _descController = TextEditingController(text: task?.description ?? '');
     _subTaskInputController = TextEditingController();
@@ -54,11 +53,18 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
     _subTasks = List.from(task?.subTasks ?? []);
     _isPinned = task?.isPinned ?? false;
     _selectedRecurrence = task?.recurrence ?? TaskRecurrence.none;
+
+    if (task != null &&
+        (task.description.isNotEmpty ||
+            task.subTasks.isNotEmpty ||
+            task.recurrence != TaskRecurrence.none ||
+            task.isPinned)) {
+      _showAdvancedDetails = true;
+    }
   }
 
   @override
   void dispose() {
-    // التخلص من المتحكمات لمنع تسرب الذاكرة (Memory Leaks)
     _titleController.dispose();
     _descController.dispose();
     _subTaskInputController.dispose();
@@ -72,7 +78,6 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
       initialDate: _selectedDueDate ?? now,
       firstDate: now.subtract(const Duration(days: 365)),
       lastDate: now.add(const Duration(days: 365 * 5)),
-      locale: const Locale('ar', 'SA'),
     );
     if (picked != null) {
       setState(() {
@@ -95,9 +100,10 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
 
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
+      HapticFeedback.lightImpact();
       widget.onSave(
-        _titleController.text,
-        _descController.text,
+        _titleController.text.trim(),
+        _descController.text.trim(),
         _selectedDueDate,
         _selectedPriority,
         _selectedCategory,
@@ -112,26 +118,26 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
   Color _getPriorityColor(TaskPriority priority) {
     switch (priority) {
       case TaskPriority.high:
-        return Colors.red;
+        return const Color(0xFFDC2626);
       case TaskPriority.medium:
-        return Colors.orange;
+        return const Color(0xFFD97706);
       case TaskPriority.low:
-        return Colors.green;
+        return const Color(0xFF059669);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isEditing = widget.taskToEdit != null;
 
     return Padding(
-      // مراعاة ارتفاع لوحة المفاتيح التلقائي عبر viewInsets.bottom
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
         left: 20,
         right: 20,
-        top: 16,
+        top: 14,
       ),
       child: Form(
         key: _formKey,
@@ -142,297 +148,413 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
             children: [
               Center(
                 child: Container(
-                  width: 40,
+                  
+                  width: 36,
                   height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
+                  margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.outlineVariant,
+                    color: theme.colorScheme.outlineVariant.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
 
-              Text(
-                isEditing ? 'تعديل المهمة' : 'إضافة مهمة',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _titleController,
-                autofocus: !isEditing,
-                decoration: const InputDecoration(
-                  hintText: 'عنوان المهمة...',
-                  prefixIcon: Icon(Icons.task_alt_rounded),
-                ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'يرجى إدخال عنوان للمهمة';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-
-              TextFormField(
-                controller: _descController,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  hintText: 'ملاحظات وتفاصيل إضافية (اختياري)',
-                  prefixIcon: Icon(Icons.notes_rounded),
-                ),
-              ),
-              const SizedBox(height: 16),
-
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickDueDate,
-                      icon: const Icon(Icons.calendar_today_rounded, size: 18),
-                      label: Text(
-                        _selectedDueDate == null
-                            ? 'تحديد موعد الاستحقاق'
-                            : 'الموعد: ${_selectedDueDate!.year}/${_selectedDueDate!.month}/${_selectedDueDate!.day}',
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
+                  Text(
+                    isEditing ? 'Edit Task' : 'New Task',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
                     ),
                   ),
-                  if (_selectedDueDate != null) ...[
-                    const SizedBox(width: 8),
-                    IconButton(
-                      tooltip: 'إلغاء التاريخ',
-                      icon: const Icon(Icons.close_rounded, color: Colors.red),
-                      onPressed: () {
-                        setState(() {
-                          _selectedDueDate = null;
-                        });
-                      },
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              Text(
-                'مستوى الأولوية:',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<TaskPriority>(
-                segments: TaskPriority.values.map((priority) {
-                  final color = _getPriorityColor(priority);
-                  return ButtonSegment<TaskPriority>(
-                    value: priority,
-                    label: Text(priority.label),
-                    icon: Icon(Icons.flag_rounded, color: color, size: 18),
-                  );
-                }).toList(),
-                selected: {_selectedPriority},
-                onSelectionChanged: (newSelection) {
-                  setState(() {
-                    _selectedPriority = newSelection.first;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-
-              Text(
-                'التصنيف:',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: TaskCategory.values.map((cat) {
-                    final isSelected = _selectedCategory == cat;
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: ChoiceChip(
-                        avatar: Text(cat.icon),
-                        label: Text(cat.label),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() {
-                              _selectedCategory = cat;
-                            });
-                          }
-                        },
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Text(
-                'تكرار المهمة (بناء العادات):',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: TaskRecurrence.values.map((rec) {
-                    final isSelected = _selectedRecurrence == rec;
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: ChoiceChip(
-                        avatar: Text(rec.icon),
-                        label: Text(rec.label),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() {
-                              _selectedRecurrence = rec;
-                            });
-                          }
-                        },
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // خيار تثبيت المهمة في القمة (Pinned Task)
-              Container(
-                decoration: BoxDecoration(
-                  // ignore: deprecated_member_use
-                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(
-                    0.35,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: SwitchListTile(
-                  secondary: const Icon(
-                    Icons.push_pin_rounded,
-                    color: Colors.amber,
-                  ),
-                  title: const Text(
-                    'تثبيت في القمة ',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  subtitle: const Text(
-                    'تظهر هذه المهمة دائماً في أعلى القائمة',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  value: _isPinned,
-                  onChanged: (val) {
-                    setState(() {
-                      _isPinned = val;
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Text(
-                'المهام الفرعية (Checklist):',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _subTaskInputController,
-                      decoration: const InputDecoration(
-                        hintText: 'إضافة خطوة فرعية...',
-                        isDense: true,
-                        prefixIcon: Icon(
-                          Icons.subdirectory_arrow_right_rounded,
-                        ),
-                      ),
-                      onSubmitted: (_) => _addSubTask(),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filledTonal(
-                    onPressed: _addSubTask,
-                    icon: const Icon(Icons.add_rounded),
-                    tooltip: 'إضافة الخطوة',
-                  ),
-                ],
-              ),
-
-              if (_subTasks.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Column(
-                  children: List.generate(_subTasks.length, (index) {
-                    final item = _subTasks[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
+                  if (_selectedDueDate != null)
+                    InkWell(
+                      onTap: () => setState(() => _selectedDueDate = null),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
+                          horizontal: 8,
+                          vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceVariant.withOpacity(
-                            0.3,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Row(
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.check_circle_outline_rounded,
-                              size: 18,
-                              color: theme.colorScheme.primary,
+                              Icons.close_rounded,
+                              size: 12,
+                              color: Colors.red,
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                item.title,
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.close_rounded,
-                                size: 18,
+                            SizedBox(width: 4),
+                            Text(
+                              'Clear Date',
+                              style: TextStyle(
+                                fontSize: 11,
                                 color: Colors.red,
+                                fontWeight: FontWeight.w600,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _subTasks.removeAt(index);
-                                });
-                              },
                             ),
                           ],
                         ),
                       ),
-                    );
-                  }),
-                ),
-              ],
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
 
-              const SizedBox(height: 24),
+              TextFormField(
+                controller: _titleController,
+                autofocus: !isEditing,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
+                decoration: InputDecoration(
+                  hintText: 'What needs to be done?',
+                  filled: true,
+                  fillColor: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFF8FAFC),
+                  prefixIcon: Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Please enter a task title';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 10),
+
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    InkWell(
+                      onTap: _pickDueDate,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _selectedDueDate != null
+                              ? theme.colorScheme.primary.withOpacity(0.12)
+                              : (isDark
+                                    ? const Color(0xFF1E293B)
+                                    : const Color(0xFFF1F5F9)),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _selectedDueDate != null
+                                ? theme.colorScheme.primary
+                                : Colors.transparent,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              size: 13,
+                              color: _selectedDueDate != null
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.outline,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _selectedDueDate == null
+                                  ? 'Due Date'
+                                  : '${_selectedDueDate!.month}/${_selectedDueDate!.day}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: _selectedDueDate != null
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    PopupMenuButton<TaskPriority>(
+                      initialValue: _selectedPriority,
+                      onSelected: (p) => setState(() => _selectedPriority = p),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getPriorityColor(
+                            _selectedPriority,
+                          ).withOpacity(0.10),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircleAvatar(
+                              radius: 3.5,
+                              backgroundColor: _getPriorityColor(
+                                _selectedPriority,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _selectedPriority.label,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: _getPriorityColor(_selectedPriority),
+                              ),
+                            ),
+                            const Icon(Icons.arrow_drop_down, size: 16),
+                          ],
+                        ),
+                      ),
+                      itemBuilder: (context) => TaskPriority.values.map((p) {
+                        return PopupMenuItem(
+                          value: p,
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 3.5,
+                                backgroundColor: _getPriorityColor(p),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(p.label),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(width: 8),
+
+                    PopupMenuButton<TaskCategory>(
+                      initialValue: _selectedCategory,
+                      onSelected: (c) => setState(() => _selectedCategory = c),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E293B)
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.folder_outlined,
+                              size: 14,
+                              color: theme.colorScheme.outline,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              _selectedCategory.label,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Icon(Icons.arrow_drop_down, size: 16),
+                          ],
+                        ),
+                      ),
+                      itemBuilder: (context) => TaskCategory.values.map((c) {
+                        return PopupMenuItem(value: c, child: Text(c.label));
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    setState(
+                      () => _showAdvancedDetails = !_showAdvancedDetails,
+                    );
+                  },
+                  icon: Icon(
+                    _showAdvancedDetails
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                  ),
+                  label: Text(
+                    _showAdvancedDetails
+                        ? 'Hide Details'
+                        : 'More Details (Notes, Checklist, Recurrence)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                ),
+              ),
+
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      controller: _descController,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        hintText: 'Notes and description...',
+                        filled: true,
+                        fillColor: isDark
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFFF8FAFC),
+                        prefixIcon: const Icon(Icons.notes_rounded, size: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text(
+                              'Pin to Top',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            value: _isPinned,
+                            onChanged: (val) => setState(() => _isPinned = val),
+                          ),
+                        ),
+                        DropdownButton<TaskRecurrence>(
+                          value: _selectedRecurrence,
+                          underline: const SizedBox(),
+                          items: TaskRecurrence.values.map((r) {
+                            return DropdownMenuItem(
+                              value: r,
+                              child: Text(
+                                r.label,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null)
+                              setState(() => _selectedRecurrence = val);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _subTaskInputController,
+                            decoration: InputDecoration(
+                              hintText: 'Add subtask step...',
+                              isDense: true,
+                              filled: true,
+                              fillColor: isDark
+                                  ? const Color(0xFF1E293B)
+                                  : const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            onSubmitted: (_) => _addSubTask(),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          onPressed: _addSubTask,
+                          icon: const Icon(Icons.add, size: 18),
+                        ),
+                      ],
+                    ),
+
+                    if (_subTasks.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      ..._subTasks.asMap().entries.map((entry) {
+                        final idx = entry.key;
+                        final st = entry.value;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.subdirectory_arrow_right_rounded,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  st.title,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() => _subTasks.removeAt(idx));
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ],
+                ),
+                crossFadeState: _showAdvancedDetails
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 200),
+              ),
+              const SizedBox(height: 12),
 
               FilledButton(
                 onPressed: _submit,
@@ -443,10 +565,10 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
                   ),
                 ),
                 child: Text(
-                  isEditing ? 'حفظ التعديلات' : 'إضافة المهمة',
+                  isEditing ? 'Save Changes' : 'Save Task',
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
