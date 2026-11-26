@@ -118,11 +118,11 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
   Color _getPriorityColor(TaskPriority priority) {
     switch (priority) {
       case TaskPriority.high:
-        return const Color(0xFFDC2626);
+        return const Color(0xFFF43F5E);
       case TaskPriority.medium:
-        return const Color(0xFFD97706);
+        return const Color(0xFF0284C7);
       case TaskPriority.low:
-        return const Color(0xFF059669);
+        return const Color(0xFF10B981);
     }
   }
 
@@ -178,7 +178,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
+                          color: const Color(0xFFF43F5E).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Row(
@@ -187,14 +187,14 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
                             Icon(
                               Icons.close_rounded,
                               size: 12,
-                              color: Colors.red,
+                              color: Color(0xFFF43F5E),
                             ),
                             SizedBox(width: 4),
                             Text(
                               'Clear Date',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.red,
+                                color: Color(0xFFF43F5E),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -365,8 +365,13 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
                         decoration: BoxDecoration(
                           color: isDark
                               ? const Color(0xFF1E293B)
-                              : const Color(0xFFF1F5F9),
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0x1FFFFFFF)
+                                : const Color(0xFFE2E8F0),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -559,6 +564,10 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
               FilledButton(
                 onPressed: _submit,
                 style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  shadowColor: theme.colorScheme.primary.withOpacity(0.3),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),

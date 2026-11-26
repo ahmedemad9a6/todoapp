@@ -56,7 +56,7 @@ class EmptyTasksView extends StatelessWidget {
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
               ),
             ),
             const SizedBox(height: 8),

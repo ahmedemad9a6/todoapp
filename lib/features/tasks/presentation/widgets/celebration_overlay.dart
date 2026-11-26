@@ -48,7 +48,7 @@ class CelebrationOverlayState extends State<CelebrationOverlay>
     const colors = [
       Color(0xFF10B981), // زمردي
       Color(0xFF3B82F6), // أزرق ناصع
-      Color(0xFFF59E0B), // ذهبي
+      Color(0xFF6366F1), // إنديجو أنيق
       Color(0xFFEC4899), // وردي
       Color(0xFF8B5CF6), // بنفسجي
       Color(0xFF06B6D4), // فيروزي

@@ -61,11 +61,18 @@ class _TaskFilterBarState extends State<TaskFilterBar> {
           Container(
             height: 44,
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? const Color(0x1FFFFFFF) : const Color(0x0F000000),
+                color: isDark ? const Color(0x1FFFFFFF) : const Color(0xFFE2E8F0),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
             child: Row(
               children: [
@@ -186,7 +193,7 @@ class _TaskFilterBarState extends State<TaskFilterBar> {
           Container(
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -206,7 +213,9 @@ class _TaskFilterBarState extends State<TaskFilterBar> {
                       padding: const EdgeInsets.symmetric(vertical: 7),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? (isDark ? const Color(0xFF334155) : Colors.white)
+                            ? (isDark
+                                ? const Color(0xFF334155)
+                                : Colors.white)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: isSelected
@@ -232,7 +241,7 @@ class _TaskFilterBarState extends State<TaskFilterBar> {
                                   fontSize: 11.5,
                                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                                   color: isSelected
-                                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                                      ? (isDark ? Colors.white : theme.colorScheme.primary)
                                       : theme.colorScheme.outline,
                                 ),
                               ),

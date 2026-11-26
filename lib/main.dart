@@ -30,14 +30,15 @@ void main() async {
     await windowManager.ensureInitialized();
 
     const WindowOptions windowOptions = WindowOptions(
-      size: Size(420, 820),
-      minimumSize: Size(360, 600),
+      size: Size(410, 860),
       center: true,
       skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.normal,
+      backgroundColor: Colors.transparent,
+      titleBarStyle: TitleBarStyle.hidden,
     );
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.setResizable(false);
       await windowManager.show();
       await windowManager.focus();
     });
@@ -65,9 +66,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double outerRadius = 32.0;
-    const double innerRadius = 24.0;
-
     return MaterialApp(
       title: 'Task Manager',
       debugShowCheckedModeBanner: false,
@@ -82,35 +80,89 @@ class MyApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: context.watch<ThemeCubit>().state,
       builder: (context, child) {
-        return Container(
-          color: const Color(0xFF18181B),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.all(8),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF111115),
-              borderRadius: BorderRadius.circular(outerRadius),
-              border: Border.all(
-                color: const Color(0xFF3A3A46),
-                width: 2.5,
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black54,
-                  blurRadius: 20,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(innerRadius),
-              child: child ?? const SizedBox.shrink(),
-            ),
-          ),
-        );
+        return IPhoneFrame(child: child ?? const SizedBox.shrink());
       },
       home: SplashPage(),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// إطار الآيفون
+// ---------------------------------------------------------------------------
+class IPhoneFrame extends StatelessWidget {
+  final Widget child;
+  const IPhoneFrame({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    // على الموبايل الحقيقي لا نعرض الإطار
+    final isDesktop =
+        Platform.isLinux || Platform.isWindows || Platform.isMacOS;
+    if (!isDesktop) return child;
+
+    return Container(
+      margin: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(10), // سمك البيزل
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(56),
+        border: Border.all(color: const Color(0xFF2A2A2E), width: 3),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(46),
+        child: Stack(
+          children: [
+            // الشاشة (مع إزاحة حتى ما يتغطى المحتوى بالـ Dynamic Island)
+            MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                padding: const EdgeInsets.only(top: 54, bottom: 24),
+              ),
+              child: child,
+            ),
+
+            // Dynamic Island + منطقة سحب النافذة
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: DragToMoveArea(
+                child: SizedBox(
+                  height: 50,
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 11),
+                      width: 110,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // مؤشر الـ Home تحت
+            IgnorePointer(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  width: 120,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: const Color(0x59000000),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

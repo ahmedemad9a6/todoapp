@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primaryColor = Color(0xFF4F46E5);
+  // ألوان عصرية دافئة مستوحاة من Linear & Stripe (Modern Slate & Tech Indigo)
+  static const Color primaryColor = Color(0xFF4F46E5);       // Indigo فاخر
   static const Color primaryDarkColor = Color(0xFF4338CA);
   static const Color secondaryColor = Color(0xFF6366F1);
+
+  // ألوان الحالات العملية والأولويات (Modern Semantic Accents)
+  static const Color success = Color(0xFF10B981);            // Emerald أخضر راقي
+  static const Color warning = Color(0xFF0284C7);            // Sky Blue بديل راقي وعصري جداً للأصفر
+  static const Color danger = Color(0xFFF43F5E);             // Rose أحمر عصري هادئ
+  static const Color info = Color(0xFF6366F1);               // Indigo ناعم
 
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.fromSeed(
@@ -14,12 +21,14 @@ class AppTheme {
       brightness: Brightness.light,
       surface: Colors.white,
       surfaceVariant: const Color(0xFFF1F5F9),
+      outline: const Color(0xFF64748B),
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+      // خلفية ناعمة ومريحة للعين مستوحاة من أبل (iOS Cashmere Gray - 0 بياض ناصع، مريحة للعين جداً)
+      scaffoldBackgroundColor: const Color(0xFFF2F4F7),
       textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).copyWith(
         headlineMedium: GoogleFonts.inter(
           fontWeight: FontWeight.w700,
@@ -35,6 +44,7 @@ class AppTheme {
           color: const Color(0xFF1E293B),
         ),
         bodyMedium: GoogleFonts.inter(color: const Color(0xFF334155)),
+        bodySmall: GoogleFonts.inter(color: const Color(0xFF64748B)),
       ),
       appBarTheme: AppBarTheme(
         centerTitle: false,
@@ -52,36 +62,36 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(
-            color: Color(0x0F000000),
-            width: 1,
+            color: Color(0xFFE2E8F0), // إطار مايكرو فائق النعومة والأناقة
+            width: 1.0,
           ),
         ),
-        color: Colors.white,
+        color: Colors.white, // بطاقة بيضاء نقية تطفو بنعومة فوق الخلفية المريحة
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
-        elevation: 4,
+        elevation: 3,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFF8FAFC),
+        fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0x1A000000), width: 1),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0x12000000), width: 1),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
+          borderSide: const BorderSide(color: primaryColor, width: 1.8),
         ),
       ),
     );
@@ -93,14 +103,14 @@ class AppTheme {
       primary: const Color(0xFF818CF8),
       secondary: const Color(0xFFA78BFA),
       brightness: Brightness.dark,
-      surface: const Color(0xFF1E293B),
-      surfaceVariant: const Color(0xFF334155),
+      surface: const Color(0xFF1E293B),       // Slate 800
+      surfaceVariant: const Color(0xFF334155),// Slate 700
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: const Color(0xFF0B0F19),
+      scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900 مريح وراقي بدلاً من الأسود الميت
       textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
         headlineMedium: GoogleFonts.inter(
           fontWeight: FontWeight.w700,
@@ -134,7 +144,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: Color(0x1AFFFFFF), width: 1),
         ),
-        color: const Color(0xFF151D2C),
+        color: const Color(0xFF1E293B),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: const Color(0xFF6366F1),
@@ -144,7 +154,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF151D2C),
+        fillColor: const Color(0xFF1E293B),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,

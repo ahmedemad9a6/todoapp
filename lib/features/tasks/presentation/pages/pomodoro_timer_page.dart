@@ -204,7 +204,7 @@ class _PomodoroTimerPageState extends State<PomodoroTimerPage>
                     key: ValueKey(_isBreak),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: _isBreak ? const Color(0xFF059669) : theme.colorScheme.onSurface,
+                      color: _isBreak ? const Color(0xFF10B981) : theme.colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -215,7 +215,7 @@ class _PomodoroTimerPageState extends State<PomodoroTimerPage>
                   builder: (context, child) {
                     final glowOpacity = _isRunning ? _glowAnimation.value : 0.06;
                     final currentColor =
-                        _isBreak ? const Color(0xFF059669) : theme.colorScheme.primary;
+                        _isBreak ? const Color(0xFF10B981) : theme.colorScheme.primary;
 
                     return Container(
                       width: 240,
@@ -246,7 +246,7 @@ class _PomodoroTimerPageState extends State<PomodoroTimerPage>
                           backgroundColor: theme.colorScheme.surfaceVariant
                               .withOpacity(0.4),
                           valueColor: AlwaysStoppedAnimation(
-                            _isBreak ? const Color(0xFF059669) : theme.colorScheme.primary,
+                            _isBreak ? const Color(0xFF10B981) : theme.colorScheme.primary,
                           ),
                         ),
                       ),
@@ -260,7 +260,7 @@ class _PomodoroTimerPageState extends State<PomodoroTimerPage>
                               fontWeight: FontWeight.w700,
                               letterSpacing: 2,
                               color: _isBreak
-                                  ? const Color(0xFF059669)
+                                  ? const Color(0xFF10B981)
                                   : theme.colorScheme.primary,
                             ),
                           ),
@@ -307,9 +307,19 @@ class _PomodoroTimerPageState extends State<PomodoroTimerPage>
                         ),
                         decoration: BoxDecoration(
                           color: _isBreak
-                              ? const Color(0xFF059669)
+                              ? const Color(0xFF10B981)
                               : theme.colorScheme.primary,
                           borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (_isBreak
+                                      ? const Color(0xFF10B981)
+                                      : theme.colorScheme.primary)
+                                  .withOpacity(0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,

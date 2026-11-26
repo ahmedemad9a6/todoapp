@@ -27,7 +27,7 @@ class StatisticsPage extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Export failed: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFFF43F5E),
           ),
         );
       }
@@ -76,7 +76,7 @@ class StatisticsPage extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Import error: $e'),
-                        backgroundColor: Colors.red,
+                        backgroundColor: const Color(0xFFF43F5E),
                       ),
                     );
                   }
@@ -123,7 +123,7 @@ class StatisticsPage extends StatelessWidget {
               color: isDark ? const Color(0xFF1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? const Color(0x1FFFFFFF) : const Color(0x0F000000),
+                color: isDark ? const Color(0x1FFFFFFF) : const Color(0xFFE2E8F0),
               ),
               boxShadow: [
                 BoxShadow(
@@ -187,7 +187,7 @@ class StatisticsPage extends StatelessWidget {
                                             letterSpacing: -0.2,
                                             color: isDark
                                                 ? Colors.white
-                                                : const Color(0xFF0F172A),
+                                                : const Color(0xFF1E293B),
                                           ),
                                         ),
                                       ],
@@ -205,7 +205,7 @@ class StatisticsPage extends StatelessWidget {
                                             letterSpacing: -0.5,
                                             color: isDark
                                                 ? Colors.white
-                                                : const Color(0xFF0F172A),
+                                                : const Color(0xFF1E293B),
                                           ),
                                         ),
                                         Text(
@@ -301,7 +301,7 @@ class StatisticsPage extends StatelessWidget {
                   title: 'Completed',
                   targetValue: completed,
                   icon: Icons.check_circle_outline_rounded,
-                  color: const Color(0xFF059669),
+                  color: const Color(0xFF10B981),
                 ),
               ),
             ],
@@ -315,7 +315,7 @@ class StatisticsPage extends StatelessWidget {
                   title: 'In Progress',
                   targetValue: pending,
                   icon: Icons.pending_outlined,
-                  color: const Color(0xFFD97706),
+                  color: const Color(0xFF0284C7),
                 ),
               ),
               const SizedBox(width: 12),
@@ -324,8 +324,8 @@ class StatisticsPage extends StatelessWidget {
                   theme: theme,
                   title: 'Overdue',
                   targetValue: overdue,
-                  icon: Icons.warning_amber_rounded,
-                  color: const Color(0xFFDC2626),
+                  icon: Icons.error_outline_rounded,
+                  color: const Color(0xFFF43F5E),
                 ),
               ),
             ],
@@ -363,11 +363,11 @@ class StatisticsPage extends StatelessWidget {
                     final pRatio = total > 0 ? (pCount / total) : 0.0;
                     Color color;
                     if (p == TaskPriority.high) {
-                      color = const Color(0xFFDC2626);
+                      color = const Color(0xFFF43F5E);
                     } else if (p == TaskPriority.medium) {
-                      color = const Color(0xFFD97706);
+                      color = const Color(0xFF0284C7);
                     } else {
-                      color = const Color(0xFF059669);
+                      color = const Color(0xFF10B981);
                     }
 
                     return Padding(
@@ -507,7 +507,7 @@ class StatisticsPage extends StatelessWidget {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0x1AFFFFFF) : const Color(0x0F000000),
+          color: isDark ? const Color(0x1AFFFFFF) : const Color(0xFFE2E8F0),
           width: 1,
         ),
       ),
@@ -546,7 +546,7 @@ class StatisticsPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
                 ),
               );
             },

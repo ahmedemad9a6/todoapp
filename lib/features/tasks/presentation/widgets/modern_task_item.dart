@@ -33,11 +33,11 @@ class _ModernTaskItemState extends State<ModernTaskItem> {
   Color _getPriorityColor(TaskPriority priority) {
     switch (priority) {
       case TaskPriority.high:
-        return const Color(0xFFDC2626);
+        return const Color(0xFFF43F5E); // Rose 500 راقي وعصري
       case TaskPriority.medium:
-        return const Color(0xFFD97706);
+        return const Color(0xFF0284C7); // Sky Blue 600 بديل رائع وأنيق للأصفر
       case TaskPriority.low:
-        return const Color(0xFF059669);
+        return const Color(0xFF10B981); // Emerald 500 زمردي مريح
     }
   }
 
@@ -60,7 +60,7 @@ class _ModernTaskItemState extends State<ModernTaskItem> {
           alignment: AlignmentDirectional.centerStart,
           padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
-            color: const Color(0xFF059669),
+            color: const Color(0xFF10B981),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -87,7 +87,7 @@ class _ModernTaskItemState extends State<ModernTaskItem> {
           alignment: AlignmentDirectional.centerEnd,
           padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
-            color: const Color(0xFFDC2626),
+            color: const Color(0xFFF43F5E),
             borderRadius: BorderRadius.circular(16),
           ),
           child: const Row(
@@ -131,12 +131,12 @@ class _ModernTaskItemState extends State<ModernTaskItem> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: task.isPinned
-                  ? const Color(0xFFF59E0B).withOpacity(0.5)
+                  ? const Color(0xFF6366F1).withOpacity(0.5)
                   : (task.isOverdue && !isDone
-                        ? const Color(0xFFDC2626).withOpacity(0.35)
+                        ? const Color(0xFFF43F5E).withOpacity(0.35)
                         : (theme.brightness == Brightness.dark
                               ? const Color(0x1EFFFFFF)
-                              : const Color(0x0F000000))),
+                              : const Color(0xFFE2E8F0))),
               width: task.isPinned ? 1.5 : 1.0,
             ),
             boxShadow: isDone
@@ -144,9 +144,9 @@ class _ModernTaskItemState extends State<ModernTaskItem> {
                 : [
                     BoxShadow(
                       color: Colors.black.withOpacity(
-                        theme.brightness == Brightness.dark ? 0.2 : 0.03,
+                        theme.brightness == Brightness.dark ? 0.22 : 0.04,
                       ),
-                      blurRadius: 8,
+                      blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -176,14 +176,14 @@ class _ModernTaskItemState extends State<ModernTaskItem> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: isDone
-                                ? const Color(0xFF059669)
+                                ? const Color(0xFF10B981)
                                 : Colors.transparent,
                             border: Border.all(
                               color: isDone
-                                  ? const Color(0xFF059669)
+                                  ? const Color(0xFF10B981)
                                   : (theme.brightness == Brightness.dark
                                         ? const Color(0x40FFFFFF)
-                                        : const Color(0x33000000)),
+                                        : const Color(0xFF94A3B8)),
                               width: 1.8,
                             ),
                           ),
@@ -202,7 +202,7 @@ class _ModernTaskItemState extends State<ModernTaskItem> {
                             const Icon(
                               Icons.push_pin_rounded,
                               size: 13,
-                              color: Color(0xFFF59E0B),
+                              color: Color(0xFF6366F1),
                             ),
                             const SizedBox(width: 6),
                           ],
@@ -318,11 +318,11 @@ class _ModernTaskItemState extends State<ModernTaskItem> {
                                   decoration: BoxDecoration(
                                     color: task.isOverdue
                                         ? const Color(
-                                            0xFFDC2626,
+                                            0xFFF43F5E,
                                           ).withOpacity(0.10)
                                         : (task.isDueToday
                                               ? const Color(
-                                                  0xFFD97706,
+                                                  0xFF0284C7,
                                                 ).withOpacity(0.12)
                                               : theme.colorScheme.surfaceVariant
                                                     .withOpacity(0.4)),
@@ -333,16 +333,16 @@ class _ModernTaskItemState extends State<ModernTaskItem> {
                                     children: [
                                       Icon(
                                         task.isOverdue
-                                            ? Icons.warning_amber_rounded
+                                            ? Icons.error_outline_rounded
                                             : (task.isDueToday
                                                   ? Icons.access_time_rounded
                                                   : Icons
                                                         .calendar_today_rounded),
                                         size: 11,
                                         color: task.isOverdue
-                                            ? const Color(0xFFDC2626)
+                                            ? const Color(0xFFF43F5E)
                                             : (task.isDueToday
-                                                  ? const Color(0xFFD97706)
+                                                  ? const Color(0xFF0284C7)
                                                   : theme.colorScheme.outline),
                                       ),
                                       const SizedBox(width: 4),
@@ -356,9 +356,9 @@ class _ModernTaskItemState extends State<ModernTaskItem> {
                                           fontSize: 10.5,
                                           fontWeight: FontWeight.w600,
                                           color: task.isOverdue
-                                              ? const Color(0xFFDC2626)
+                                              ? const Color(0xFFF43F5E)
                                               : (task.isDueToday
-                                                    ? const Color(0xFFD97706)
+                                                    ? const Color(0xFF0284C7)
                                                     : theme
                                                           .colorScheme
                                                           .outline),
@@ -536,7 +536,7 @@ class _ModernTaskItemState extends State<ModernTaskItem> {
                                           ? Icons.push_pin_outlined
                                           : Icons.push_pin_rounded,
                                       size: 18,
-                                      color: const Color(0xFFF59E0B),
+                                      color: const Color(0xFF6366F1),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(

@@ -190,15 +190,22 @@ class _TasksPageState extends State<TasksPage> {
                         ? theme.colorScheme.primary.withOpacity(0.12)
                         : (isDark
                               ? const Color(0xFF1E293B)
-                              : const Color(0xFFF1F5F9)),
+                              : Colors.white),
                     borderRadius: BorderRadius.circular(11),
                     border: Border.all(
                       color: _showFilters || hasActiveFilter
                           ? theme.colorScheme.primary.withOpacity(0.4)
                           : (isDark
                                 ? const Color(0x1FFFFFFF)
-                                : const Color(0x0F000000)),
+                                : const Color(0xFFE2E8F0)),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
                   ),
                   child: IconButton(
                     padding: EdgeInsets.zero,
@@ -210,11 +217,9 @@ class _TasksPageState extends State<TasksPage> {
                           _showFilters
                               ? Icons.close_rounded
                               : Icons.tune_rounded,
-                          color: _showFilters || hasActiveFilter
-                              ? theme.colorScheme.primary
-                              : (isDark
-                                    ? Colors.white70
-                                    : const Color(0xFF475569)),
+                          color: isDark
+                              ? const Color(0xFF818CF8)
+                              : theme.colorScheme.primary,
                           size: 18,
                         ),
                         if (hasActiveFilter && !_showFilters)
@@ -244,20 +249,29 @@ class _TasksPageState extends State<TasksPage> {
               decoration: BoxDecoration(
                 color: isDark
                     ? const Color(0xFF1E293B)
-                    : const Color(0xFFF1F5F9),
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(11),
                 border: Border.all(
                   color: isDark
                       ? const Color(0x1FFFFFFF)
-                      : const Color(0x0F000000),
+                      : const Color(0xFFE2E8F0),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
               child: IconButton(
                 padding: EdgeInsets.zero,
                 tooltip: 'Productivity & Analytics',
                 icon: Icon(
                   Icons.insights_rounded,
-                  color: theme.colorScheme.primary,
+                  color: isDark
+                      ? const Color(0xFF818CF8)
+                      : theme.colorScheme.primary,
                   size: 18,
                 ),
                 onPressed: () {
@@ -275,20 +289,29 @@ class _TasksPageState extends State<TasksPage> {
               decoration: BoxDecoration(
                 color: isDark
                     ? const Color(0xFF1E293B)
-                    : const Color(0xFFF1F5F9),
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(11),
                 border: Border.all(
                   color: isDark
                       ? const Color(0x1FFFFFFF)
-                      : const Color(0x0F000000),
+                      : const Color(0xFFE2E8F0),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
               child: IconButton(
                 padding: EdgeInsets.zero,
                 tooltip: isDark ? 'Light Mode' : 'Dark Mode',
                 icon: Icon(
                   isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                  color: isDark ? Colors.amber : const Color(0xFF475569),
+                  color: isDark
+                      ? const Color(0xFF818CF8)
+                      : theme.colorScheme.primary,
                   size: 18,
                 ),
                 onPressed: () {
@@ -349,8 +372,15 @@ class _TasksPageState extends State<TasksPage> {
                         border: Border.all(
                           color: isDark
                               ? const Color(0x1AFFFFFF)
-                              : const Color(0x0F000000),
+                              : const Color(0xFFE2E8F0),
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
@@ -359,8 +389,8 @@ class _TasksPageState extends State<TasksPage> {
                               borderRadius: BorderRadius.circular(6),
                               child: TweenAnimationBuilder<double>(
                                 tween: Tween<double>(
-                                  begin: 0.0,
-                                  end: progressRatio,
+                                   begin: 0.0,
+                                   end: progressRatio,
                                 ),
                                 duration: const Duration(milliseconds: 400),
                                 curve: Curves.easeOutCubic,
@@ -375,7 +405,7 @@ class _TasksPageState extends State<TasksPage> {
                                         : const Color(0xFFE2E8F0),
                                     valueColor: AlwaysStoppedAnimation(
                                       completedCount == totalCount
-                                          ? const Color(0xFF059669)
+                                          ? const Color(0xFF10B981)
                                           : theme.colorScheme.primary,
                                     ),
                                   );
@@ -393,7 +423,7 @@ class _TasksPageState extends State<TasksPage> {
                                   child: Icon(
                                     Icons.check_circle_rounded,
                                     size: 13,
-                                    color: Color(0xFF059669),
+                                    color: Color(0xFF10B981),
                                   ),
                                 ),
                               Text(
@@ -404,7 +434,7 @@ class _TasksPageState extends State<TasksPage> {
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
                                   color: completedCount == totalCount
-                                      ? const Color(0xFF059669)
+                                      ? const Color(0xFF10B981)
                                       : theme.colorScheme.outline,
                                 ),
                               ),
@@ -415,8 +445,8 @@ class _TasksPageState extends State<TasksPage> {
                     ),
 
                   AnimatedSize(
-                    duration: const Duration(milliseconds: 9000),
-                    curve: Curves.easeInSine,
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeInOut,
                     child: _showFilters
                         ? const TaskFilterBar()
                         : const SizedBox.shrink(),
@@ -434,7 +464,7 @@ class _TasksPageState extends State<TasksPage> {
                             itemBuilder: (context, index) {
                               final task = tasks[index];
                               return ModernTaskItem(
-                               key: ValueKey(task.id),
+                                key: ValueKey(task.id),
                                 task: task,
                                 onToggle: () =>
                                     _handleToggleTask(context, task),
@@ -472,7 +502,7 @@ class _TasksPageState extends State<TasksPage> {
                     children: [
                       const Icon(
                         Icons.error_outline_rounded,
-                        color: Colors.red,
+                        color: Color(0xFFF43F5E),
                         size: 44,
                       ),
                       const SizedBox(height: 12),
